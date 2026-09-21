@@ -45,7 +45,10 @@ E:\StartUp\blog\
 ├── netlify.toml
 ├── package.json
 ├── tsconfig.json
-├── .env.example                PUBLIC_SANITY_PROJECT_ID, PUBLIC_SANITY_DATASET, SANITY_API_READ_TOKEN
+├── .env.example                PUBLIC_SANITY_PROJECT_ID, PUBLIC_SANITY_DATASET, SANITY_API_TOKEN (seed only)
+├── .mcp.json.example           Sanity MCP config for Claude Code
+├── README.md                   setup, MCP, webhook steps
+├── scripts/seed.ts             one-time placeholder content seeder
 ├── src/
 │   ├── layouts/BaseLayout.astro
 │   ├── pages/
