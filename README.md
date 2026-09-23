@@ -54,42 +54,29 @@ Design spec: [`docs/superpowers/specs/2026-09-21-journal-blog-design.md`](docs/s
 
 ## Publishing a post
 
-The site is static: the pages are built once and served as files. Publishing
-in the Studio changes the dataset, but nothing rebuilds the HTML, so the
-live site keeps showing the previous content until a new build runs.
+Publish in the Studio. Nothing else. A Sanity webhook calls a Netlify build
+hook, Netlify builds this repository, and the new pages are live in about a
+minute.
 
-Until the repository has a Git remote that Netlify can build from, run this
-after you publish:
+`npm run deploy` still exists as a fallback: it builds locally and pushes the
+result straight to Netlify, which is useful when the automatic chain is broken
+or you want to see a change without committing it.
 
-```bash
-npm run deploy
-```
+### How the chain is wired
 
-To make it automatic later: push this repository to GitHub, link the Netlify
-site to it, create a build hook, and point a Sanity webhook at that hook.
-The steps are under "Rebuild when a post is published" below.
+1. **Sanity webhook** `Netlify rebuild` posts to a Netlify build hook on every
+   transaction in the `production` dataset. It carries no filter: the dataset
+   holds only posts, tags and the settings singleton, so every change is a
+   change worth rebuilding for.
+2. **Netlify build hook** starts a build of the `main` branch.
+3. **Netlify reads this repository** through a read-only deploy key rather than
+   the GitHub App. The repository also carries a webhook that tells Netlify
+   about pushes, so a commit deploys as well.
+4. **Build settings** come from `netlify.toml`. The two `PUBLIC_SANITY_*`
+   variables are set in the Netlify site, because the build runs on their
+   machines and has no `.env`.
 
-Use `npx netlify dev` whenever you work on the view counter: `npm run dev`
-has no function runtime, so `/api/views` returns 404 and the counter stays
-hidden.
-
-## Content model
-
-- **post** — title, slug, emoji, cover image, excerpt, publish date, tags,
-  body (Portable Text), and an optional series number that prints
-  "Kể chuyện #N" next to the date.
-- **tag** — name, slug, emoji, and one colour from a fixed palette.
-- **siteSettings** — a single document: site title, banner illustration,
-  intro callout, about portrait, about text.
-
-Drafts stay out of the site: every query filters `!(_id in path("drafts.**"))`.
-
-### Code blocks
-
-A post body takes code blocks with a language. Shiki colours them during the
-build, so no highlighter is downloaded by the reader. Each block gets a copy
-button. Shiki has no GROQ grammar, so `groq` is drawn with the JavaScript one;
-an unknown language falls back to plain text.
+Nothing in that chain needs `SANITY_API_TOKEN`: the dataset is public to read.
 
 ## Deploying to Netlify
 
