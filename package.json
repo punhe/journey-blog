@@ -11,7 +11,8 @@
     "check": "astro check",
     "test": "vitest run",
     "test:watch": "vitest",
-    "seed": "tsx scripts/seed.ts"
+    "seed": "tsx scripts/seed.ts",
+    "deploy": "npm run build && netlify deploy --prod --dir dist --functions netlify/functions"
   },
   "dependencies": {
     "@astrojs/react": "^7.0.0",

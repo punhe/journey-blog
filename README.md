@@ -50,6 +50,24 @@ Design spec: [`docs/superpowers/specs/2026-09-21-journal-blog-design.md`](docs/s
 | `npm run preview` | Serves the last build. |
 | `npm test` | Vitest: the views function and the query helpers. |
 | `npm run seed` | Placeholder content. See above. |
+| `npm run deploy` | Build, then push the result to Netlify. |
+
+## Publishing a post
+
+The site is static: the pages are built once and served as files. Publishing
+in the Studio changes the dataset, but nothing rebuilds the HTML, so the
+live site keeps showing the previous content until a new build runs.
+
+Until the repository has a Git remote that Netlify can build from, run this
+after you publish:
+
+```bash
+npm run deploy
+```
+
+To make it automatic later: push this repository to GitHub, link the Netlify
+site to it, create a build hook, and point a Sanity webhook at that hook.
+The steps are under "Rebuild when a post is published" below.
 
 Use `npx netlify dev` whenever you work on the view counter: `npm run dev`
 has no function runtime, so `/api/views` returns 404 and the counter stays
