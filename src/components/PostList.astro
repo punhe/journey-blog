@@ -1,0 +1,53 @@
+---
+import type { PostSummary } from '../lib/types';
+import FeaturedPost from './FeaturedPost.astro';
+import PostRow from './PostRow.astro';
+
+interface Props {
+  posts: PostSummary[];
+  /** The newest post gets the larger treatment on the home page only. */
+  lead?: boolean;
+  emptyMessage?: string;
+}
+
+const { posts, lead = false, emptyMessage = 'Chưa có bài nào.' } = Astro.props;
+const [first, ...rest] = posts;
+const rows = lead ? rest : posts;
+---
+
+<div class="page list">
+  {
+    posts.length === 0 ? (
+      <p class="list__empty">{emptyMessage}</p>
+    ) : (
+      <Fragment>
+        {lead && first && <FeaturedPost post={first} />}
+        {rows.length > 0 && (
+          <ul class="list__rows">
+            {rows.map((post) => (
+              <PostRow post={post} />
+            ))}
+          </ul>
+        )}
+      </Fragment>
+    )
+  }
+</div>
+
+<style>
+  .list {
+    margin-top: 1.5rem;
+  }
+
+  .list__rows {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .list__empty {
+    margin: 0;
+    padding: 1.5rem 0;
+    color: var(--text-3);
+  }
+</style>

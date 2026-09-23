@@ -1,0 +1,109 @@
+---
+/* A text switch, not an icon. Notion's own theme control is a menu label,
+   and a hand-drawn sun glyph is exactly the kind of decoration this page
+   does without. */
+---
+
+<button class="toggle" type="button" data-theme-toggle aria-live="polite">
+  <span class="toggle__label" data-theme-label>Tối</span>
+</button>
+
+<script>
+  type Mode = 'light' | 'dark';
+
+  const STORAGE_KEY = 'journal-theme';
+  const root = document.documentElement;
+  const button = document.querySelector<HTMLButtonElement>('[data-theme-toggle]');
+  const label = document.querySelector<HTMLElement>('[data-theme-label]');
+
+  function current(): Mode {
+    return root.dataset.theme === 'dark' ? 'dark' : 'light';
+  }
+
+  /** The button offers the mode you are not in. */
+  function paintLabel(mode: Mode) {
+    if (!label || !button) return;
+    const next = mode === 'dark' ? 'light' : 'dark';
+    label.textContent = next === 'dark' ? 'Tối' : 'Sáng';
+    button.setAttribute('aria-label', next === 'dark' ? 'Chuyển sang nền tối' : 'Chuyển sang nền sáng');
+  }
+
+  function apply(mode: Mode) {
+    root.dataset.theme = mode;
+    try {
+      localStorage.setItem(STORAGE_KEY, mode);
+    } catch {
+      // Private window or blocked storage: the choice lasts this page only.
+    }
+    paintLabel(mode);
+  }
+
+  /**
+   * Wipes the new theme in as a growing circle centred on the button.
+   * Falls back to an instant swap when the API is missing or the reader
+   * asked for less motion.
+   */
+  function change() {
+    const next: Mode = current() === 'dark' ? 'light' : 'dark';
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (reduced || !document.startViewTransition || !button) {
+      apply(next);
+      return;
+    }
+
+    const box = button.getBoundingClientRect();
+    const x = box.left + box.width / 2;
+    const y = box.top + box.height / 2;
+    const radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+
+    const transition = document.startViewTransition(() => apply(next));
+
+    transition.ready.then(() => {
+      root.animate(
+        { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
+        {
+          duration: 520,
+          easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
+          pseudoElement: '::view-transition-new(root)',
+        },
+      );
+    });
+  }
+
+  paintLabel(current());
+  button?.addEventListener('click', change);
+</script>
+
+<style>
+  .toggle {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.28rem 0.7rem;
+    border: 1px solid var(--line);
+    border-radius: var(--r-pill);
+    background: transparent;
+    color: var(--text-2);
+    font-family: inherit;
+    font-size: var(--step--1);
+    font-weight: 500;
+    line-height: 1.6;
+    cursor: pointer;
+    transition:
+      background-color 140ms ease,
+      color 140ms ease,
+      border-color 140ms ease;
+  }
+
+  .toggle:hover {
+    background: var(--bg-hover);
+    color: var(--text);
+    border-color: var(--line-strong);
+  }
+
+  .toggle__label {
+    display: block;
+    min-width: 2.2em;
+    text-align: center;
+  }
+</style>

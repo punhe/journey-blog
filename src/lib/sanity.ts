@@ -99,7 +99,7 @@ export function imageFor(source: SanityImage | undefined | null): ImageUrlBuilde
   return builder.image(source).auto('format').fit('crop');
 }
 
-/** "March 4, 2026" — the reference site's date format. */
+/** "March 4, 2026": the date format the reference site uses. */
 export function formatDate(iso: string): string {
   return new Intl.DateTimeFormat('en-US', {
     year: 'numeric',

@@ -1,6 +1,7 @@
 ---
 import type { GetStaticPaths } from 'astro';
-import PostGrid from '../../components/PostGrid.astro';
+import PostList from '../../components/PostList.astro';
+import TagChip from '../../components/TagChip.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getAllTags, getPostsByTag, getSiteSettings, getTagBySlug } from '../../lib/sanity';
 
@@ -20,81 +21,68 @@ if (!tag) {
   throw new Error(`No tag for slug "${slug}". The route list is out of date.`);
 }
 
-const heading = [tag.emoji, tag.name].filter(Boolean).join(' ');
-const count = `${posts.length} ${posts.length === 1 ? 'post' : 'posts'}`;
+const count = `${posts.length} bài`;
 ---
 
 <BaseLayout
-  title={`${tag.name} — ${settings.title}`}
-  description={`Posts tagged ${tag.name}.`}
+  title={`${tag.name} | ${settings.title}`}
+  description={`Các bài mang thẻ ${tag.name}.`}
   siteTitle={settings.title}
 >
-  <div class="shell">
-    <header class="tag-head">
-      <h1 class="tag-head__title" data-color={tag.color}>{heading}</h1>
-      <p class="tag-head__count">{count}</p>
-    </header>
+  <div class="page crumbs">
+    <a href="/#tags">Thẻ</a>
+    <span aria-hidden="true">/</span>
+    <span>{tag.name}</span>
   </div>
 
-  <PostGrid posts={posts} emptyMessage="No posts carry this tag yet." />
+  <header class="page head">
+    <h1 class="head__title">
+      <TagChip tag={tag} as="static" size="md" />
+    </h1>
+    <p class="head__count">{count}</p>
+  </header>
 
-  <div class="shell">
-    <p class="tag-back"><a href="/#tags">All tags</a></p>
-  </div>
+  <PostList posts={posts} emptyMessage="Chưa có bài nào mang thẻ này." />
 </BaseLayout>
 
 <style>
-  .tag-head {
-    margin-top: 3.5rem;
-  }
-
-  .tag-head__title {
-    --tag-ink: var(--tag-gray);
-
-    margin: 0;
-    font-family: var(--serif);
-    font-size: var(--step-4);
-    font-weight: 300;
-    line-height: 1.1;
-    letter-spacing: -0.015em;
-    color: var(--tag-ink);
-  }
-
-  .tag-head__title[data-color='blue'] {
-    --tag-ink: var(--tag-blue);
-  }
-  .tag-head__title[data-color='green'] {
-    --tag-ink: var(--tag-green);
-  }
-  .tag-head__title[data-color='brown'] {
-    --tag-ink: var(--tag-brown);
-  }
-  .tag-head__title[data-color='purple'] {
-    --tag-ink: var(--tag-purple);
-  }
-  .tag-head__title[data-color='red'] {
-    --tag-ink: var(--tag-red);
-  }
-  .tag-head__title[data-color='gray'] {
-    --tag-ink: var(--tag-gray);
-  }
-
-  .tag-head__count {
-    margin: 0.7rem 0 0;
-    font-family: var(--sans);
+  .crumbs {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding-top: 2rem;
     font-size: var(--step--1);
-    color: var(--ink-faint);
+    color: var(--text-3);
   }
 
-  .tag-back {
-    margin: 3.5rem 0 0;
-    font-family: var(--sans);
-    font-size: var(--step-0);
+  .crumbs a {
+    padding: 0.2rem 0.4rem;
+    margin-left: -0.4rem;
+    border-radius: var(--r-sm);
+    text-decoration: none;
+    transition:
+      background-color 140ms ease,
+      color 140ms ease;
   }
 
-  .tag-back a {
-    color: var(--celadon);
-    text-decoration-thickness: 1px;
-    text-underline-offset: 0.2em;
+  .crumbs a:hover {
+    background: var(--bg-hover);
+    color: var(--text);
+  }
+
+  .head {
+    padding-top: 0.6rem;
+  }
+
+  .head__title {
+    margin: 0;
+    font-size: var(--step-4);
+    line-height: 1.2;
+  }
+
+  .head__count {
+    margin: 0.5rem 0 0;
+    font-size: var(--step--1);
+    color: var(--text-3);
   }
 </style>

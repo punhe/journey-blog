@@ -1,4 +1,6 @@
 ---
+import ThemeToggle from './ThemeToggle.astro';
+
 interface Props {
   siteTitle: string;
 }
@@ -7,8 +9,8 @@ const { siteTitle } = Astro.props;
 const isHome = Astro.url.pathname === '/';
 ---
 
-<header class="site-header">
-  <div class="shell">
+<header class="bar">
+  <div class="bar__inner">
     {
       isHome ? (
         <span class="mark">{siteTitle}</span>
@@ -18,31 +20,69 @@ const isHome = Astro.url.pathname === '/';
         </a>
       )
     }
+    <ThemeToggle />
   </div>
 </header>
 
 <style>
-  .site-header {
-    position: relative;
-    z-index: 2;
-    padding-block: 1.5rem;
+  .bar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: color-mix(in srgb, var(--bg) 86%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid transparent;
+    transition: border-color 200ms ease;
+  }
+
+  /* The rule appears only once the page has moved under the bar. */
+  @supports (animation-timeline: scroll()) {
+    .bar {
+      animation: bar-edge linear both;
+      animation-timeline: scroll();
+      animation-range: 0 64px;
+    }
+  }
+
+  @keyframes bar-edge {
+    to {
+      border-bottom-color: var(--line);
+    }
+  }
+
+  .bar__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    height: 52px;
+    width: min(100% - var(--gutter) * 2, 64rem);
+    margin-inline: auto;
   }
 
   .mark {
-    font-family: var(--serif);
-    font-size: var(--step-1);
-    font-weight: 400;
-    letter-spacing: 0.01em;
-    color: var(--ink);
+    font-size: var(--step-0);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--text);
   }
 
   .mark--link {
+    padding: 0.2rem 0.45rem;
+    margin-left: -0.45rem;
+    border-radius: var(--r-sm);
     text-decoration: none;
-    border-bottom: 1px solid transparent;
-    transition: border-color 160ms ease;
+    transition: background-color 140ms ease;
   }
 
   .mark--link:hover {
-    border-bottom-color: var(--celadon);
+    background: var(--bg-hover);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bar {
+      animation: none;
+      border-bottom-color: var(--line);
+    }
   }
 </style>

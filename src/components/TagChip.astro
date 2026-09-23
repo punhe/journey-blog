@@ -3,73 +3,82 @@ import type { Tag } from '../lib/types';
 
 interface Props {
   tag: Tag;
-  /** `static` renders a label instead of a link (used inside post cards). */
+  /** `static` renders a label instead of a link (used inside list rows). */
   as?: 'link' | 'static';
   size?: 'sm' | 'md';
 }
 
 const { tag, as = 'link', size = 'sm' } = Astro.props;
-const label = [tag.emoji, tag.name].filter(Boolean).join(' ');
 ---
 
 {
   as === 'link' ? (
-    <a class:list={['chip', `chip--${size}`]} data-color={tag.color} href={`/tags/${tag.slug}`}>
-      {label}
+    <a class:list={['pill', `pill--${size}`]} data-color={tag.color} href={`/tags/${tag.slug}`}>
+      {tag.name}
     </a>
   ) : (
-    <span class:list={['chip', `chip--${size}`]} data-color={tag.color}>
-      {label}
+    <span class:list={['pill', `pill--${size}`]} data-color={tag.color}>
+      {tag.name}
     </span>
   )
 }
 
 <style>
-  .chip {
-    --chip-ink: var(--tag-gray);
+  .pill {
+    --fg: var(--tag-gray-fg);
+    --wash: var(--tag-gray-bg);
 
     display: inline-block;
-    padding: 0.18em 0.62em;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--chip-ink) 14%, transparent);
-    color: var(--chip-ink);
-    font-family: var(--sans);
+    padding: 0.1em 0.55em;
+    border-radius: var(--r-sm);
+    background: var(--wash);
+    color: var(--fg);
     font-size: var(--step--1);
     font-weight: 500;
-    line-height: 1.5;
+    line-height: 1.55;
     text-decoration: none;
     white-space: nowrap;
   }
 
-  .chip--md {
-    padding: 0.3em 0.85em;
+  .pill--md {
+    padding: 0.28em 0.75em;
     font-size: var(--step-0);
   }
 
-  a.chip {
-    transition: background-color 160ms ease;
+  a.pill {
+    transition: filter 140ms ease;
   }
 
-  a.chip:hover {
-    background: color-mix(in srgb, var(--chip-ink) 26%, transparent);
+  a.pill:hover {
+    filter: brightness(0.96) saturate(1.12);
   }
 
-  .chip[data-color='blue'] {
-    --chip-ink: var(--tag-blue);
+  :global([data-theme='dark']) a.pill:hover {
+    filter: brightness(1.22);
   }
-  .chip[data-color='green'] {
-    --chip-ink: var(--tag-green);
+
+  .pill[data-color='blue'] {
+    --fg: var(--tag-blue-fg);
+    --wash: var(--tag-blue-bg);
   }
-  .chip[data-color='brown'] {
-    --chip-ink: var(--tag-brown);
+  .pill[data-color='green'] {
+    --fg: var(--tag-green-fg);
+    --wash: var(--tag-green-bg);
   }
-  .chip[data-color='purple'] {
-    --chip-ink: var(--tag-purple);
+  .pill[data-color='brown'] {
+    --fg: var(--tag-brown-fg);
+    --wash: var(--tag-brown-bg);
   }
-  .chip[data-color='red'] {
-    --chip-ink: var(--tag-red);
+  .pill[data-color='purple'] {
+    --fg: var(--tag-purple-fg);
+    --wash: var(--tag-purple-bg);
   }
-  .chip[data-color='gray'] {
-    --chip-ink: var(--tag-gray);
+  .pill[data-color='red'] {
+    --fg: var(--tag-red-fg);
+    --wash: var(--tag-red-bg);
+  }
+  .pill[data-color='gray'] {
+    --fg: var(--tag-gray-fg);
+    --wash: var(--tag-gray-bg);
   }
 </style>

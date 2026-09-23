@@ -1,8 +1,8 @@
 ---
 import AboutSection from '../components/AboutSection.astro';
-import HeroBanner from '../components/HeroBanner.astro';
-import IntroCallout from '../components/IntroCallout.astro';
-import PostGrid from '../components/PostGrid.astro';
+import Callout from '../components/Callout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import PostList from '../components/PostList.astro';
 import TagFilterTabs from '../components/TagFilterTabs.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getAllPosts, getAllTags, getSiteSettings, imageFor } from '../lib/sanity';
@@ -22,11 +22,12 @@ const social = imageFor(settings.bannerImage)?.width(1200).height(630).url() ?? 
   siteTitle={settings.title}
   image={social}
 >
-  <HeroBanner image={settings.bannerImage} title={settings.title} />
-  <IntroCallout text={settings.introCallout} />
+  <PageHeader cover={settings.bannerImage} title={settings.title} eager>
+    <Callout text={settings.introCallout} />
+  </PageHeader>
 
   <TagFilterTabs tags={tags}>
-    <PostGrid posts={posts} emptyMessage="No posts yet. Write the first one in the Studio." />
+    <PostList posts={posts} lead emptyMessage="Chưa có bài nào. Viết bài đầu tiên trong Studio." />
   </TagFilterTabs>
 
   <AboutSection image={settings.aboutImage} body={settings.aboutBody} />

@@ -20,8 +20,9 @@ const { slug, increment = false } = Astro.props;
 
   function show(node: HTMLElement, count: number) {
     const formatted = new Intl.NumberFormat().format(count);
-    node.textContent = `${formatted} ${count === 1 ? 'view' : 'views'}`;
+    node.textContent = `${formatted} lượt xem`;
     node.hidden = false;
+    node.closest('[data-views-row]')?.removeAttribute('hidden');
   }
 
   function apply(views: Record<string, number> | null) {
@@ -63,9 +64,9 @@ const { slug, increment = false } = Astro.props;
 
 <style>
   .views {
-    font-family: var(--sans);
-    font-size: var(--step--1);
-    color: var(--ink-faint);
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
     font-variant-numeric: tabular-nums;
   }
 </style>

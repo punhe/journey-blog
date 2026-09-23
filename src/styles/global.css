@@ -1,52 +1,107 @@
 /* =========================================================================
-   Design tokens — a lamplit, warm-dark reading surface.
-   The ground is brown-black rather than neutral black so the illustrations
-   sit on paper, not on a screen. One accent only: celadon.
+   Tokens.
+
+   The language is a writing workspace: calm neutrals, one accent, coloured
+   pills for tags, and a soft highlight that follows the pointer down a list.
+   Shapes carry the warmth, not the typeface.
+
+   Both themes are defined here. A script in the document head resolves the
+   stored choice or the system setting into data-theme before first paint,
+   so every selector below can key on that one attribute.
    ========================================================================= */
 
+:root,
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --bg: #fcfcfb;
+  --bg-soft: #f3f3f1;
+  --bg-hover: rgba(42, 40, 37, 0.045);
+  --bg-sunken: #efeeec;
+  --line: #e5e4e0;
+  --line-strong: #d6d5d0;
+
+  --text: #2b2a28;
+  --text-2: #75736e;
+  --text-3: #9d9b95;
+
+  --accent: #c33c63;
+  --accent-soft: rgba(195, 60, 99, 0.1);
+  --accent-line: rgba(195, 60, 99, 0.28);
+
+  /* Tag pills: foreground, then the wash behind it. */
+  --tag-blue-fg: #1f5d8f;
+  --tag-blue-bg: #dceaf6;
+  --tag-green-fg: #216b4e;
+  --tag-green-bg: #d9eee4;
+  --tag-brown-fg: #7a5230;
+  --tag-brown-bg: #f0e3d6;
+  --tag-purple-fg: #5d3f8c;
+  --tag-purple-bg: #e7dff5;
+  --tag-red-fg: #9c3535;
+  --tag-red-bg: #f7dedc;
+  --tag-gray-fg: #5d5b56;
+  --tag-gray-bg: #e8e7e3;
+
+  --shadow-soft: 0 1px 2px rgba(42, 40, 37, 0.06), 0 6px 18px rgba(42, 40, 37, 0.05);
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg: #1a1a19;
+  --bg-soft: #242423;
+  --bg-hover: rgba(255, 255, 255, 0.055);
+  --bg-sunken: #141413;
+  --line: #2f2f2d;
+  --line-strong: #3d3d3a;
+
+  --text: #e8e7e4;
+  --text-2: #a3a19b;
+  --text-3: #76746e;
+
+  --accent: #f0819f;
+  --accent-soft: rgba(240, 129, 159, 0.14);
+  --accent-line: rgba(240, 129, 159, 0.32);
+
+  --tag-blue-fg: #96c4e8;
+  --tag-blue-bg: rgba(90, 160, 215, 0.18);
+  --tag-green-fg: #94d4b4;
+  --tag-green-bg: rgba(80, 190, 140, 0.16);
+  --tag-brown-fg: #d3ab86;
+  --tag-brown-bg: rgba(190, 140, 95, 0.18);
+  --tag-purple-fg: #c2a8ea;
+  --tag-purple-bg: rgba(160, 125, 220, 0.18);
+  --tag-red-fg: #eb9b98;
+  --tag-red-bg: rgba(220, 110, 105, 0.16);
+  --tag-gray-fg: #aeaca6;
+  --tag-gray-bg: rgba(255, 255, 255, 0.08);
+
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 18px rgba(0, 0, 0, 0.28);
+}
+
 :root {
-  /* Surface */
-  --ground: #1c1714;
-  --ground-raised: #241d18;
-  --ground-sunken: #151110;
-  --rule: #34291f;
+  --sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', monospace;
 
-  /* Text */
-  --ink: #efe7d9;
-  --ink-muted: #a2947e;
-  --ink-faint: #6f6455;
-
-  /* Accent */
-  --celadon: #8fbfa6;
-  --celadon-dim: #5d8672;
-
-  /* Tag palette: text colour, then the tint behind it */
-  --tag-blue: #8fb3d9;
-  --tag-green: #93c2a0;
-  --tag-brown: #c6a57e;
-  --tag-purple: #b49ed6;
-  --tag-red: #d98f86;
-  --tag-gray: #a9a096;
-
-  /* Type */
-  --serif: 'Newsreader', ui-serif, Georgia, 'Times New Roman', serif;
-  --sans: 'Be Vietnam Pro', ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
-  --mono: ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
-
-  /* A 1.2 modular scale, rounded to whole pixels */
+  /* Type scale, 1.2 ratio, whole pixels */
   --step--1: 0.8125rem;
-  --step-0: 1rem;
-  --step-1: 1.1875rem;
-  --step-2: 1.4375rem;
-  --step-3: 1.75rem;
-  --step-4: 2.0625rem;
-  --step-5: clamp(2.25rem, 1.6rem + 3.2vw, 3.75rem);
+  --step-0: 0.9375rem;
+  --step-1: 1.0625rem;
+  --step-2: 1.25rem;
+  --step-3: 1.5rem;
+  --step-4: 1.875rem;
+  --step-5: clamp(2rem, 1.5rem + 2.4vw, 3rem);
 
-  /* Rhythm */
-  --gutter: clamp(1.25rem, 5vw, 2.5rem);
-  --measure: 34rem;
-  --page: 66rem;
-  --section-gap: clamp(4rem, 9vw, 7rem);
+  /* One radius system */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+  --r-pill: 999px;
+
+  --gutter: clamp(1.125rem, 4vw, 2rem);
+  --measure: 46rem;
+  --section-gap: clamp(3rem, 6vw, 4.5rem);
 }
 
 /* ========================================================================= */
@@ -63,14 +118,13 @@ html {
 
 body {
   margin: 0;
-  background: var(--ground);
-  color: var(--ink);
+  background: var(--bg);
+  color: var(--text);
   font-family: var(--sans);
   font-size: var(--step-0);
   line-height: 1.6;
   font-synthesis-weight: none;
   -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
 }
 
 img {
@@ -83,30 +137,22 @@ a {
   color: inherit;
 }
 
-:where(a):focus-visible,
-:where(button):focus-visible {
-  outline: 2px solid var(--celadon);
-  outline-offset: 3px;
-  border-radius: 2px;
+:where(a, button):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
 }
 
 ::selection {
-  background: var(--celadon-dim);
-  color: var(--ground);
+  background: var(--accent-soft);
 }
 
-/* Centred column shared by every section. */
-.shell {
-  width: min(100% - var(--gutter) * 2, var(--page));
-  margin-inline: auto;
-}
-
-.shell--narrow {
+/* The page column, the width of a Notion page. */
+.page {
   width: min(100% - var(--gutter) * 2, var(--measure));
   margin-inline: auto;
 }
 
-/* Visible only to screen readers. */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -123,20 +169,39 @@ a {
   top: 0;
   left: 50%;
   translate: -50% -110%;
-  z-index: 10;
-  padding: 0.6rem 1.1rem;
-  background: var(--celadon);
-  color: var(--ground);
-  font-family: var(--sans);
+  z-index: 20;
+  padding: 0.55rem 1rem;
+  background: var(--accent);
+  color: #fff;
   font-size: var(--step--1);
   font-weight: 600;
   text-decoration: none;
-  border-radius: 0 0 6px 6px;
+  border-radius: 0 0 var(--r-sm) var(--r-sm);
   transition: translate 160ms ease;
 }
 
 .skip-link:focus-visible {
   translate: -50% 0;
+}
+
+/* -------------------------------------------------------------------------
+   Theme change: a circular wipe out of the toggle button.
+   The script measures the button and sets the origin; these rules only
+   remove the default cross-fade so the wipe reads cleanly.
+   ------------------------------------------------------------------------- */
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 2;
 }
 
 @media (prefers-reduced-motion: reduce) {

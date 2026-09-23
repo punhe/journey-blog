@@ -1,0 +1,175 @@
+---
+import { formatDate, imageFor } from '../lib/sanity';
+import type { PostSummary } from '../lib/types';
+import TagChip from './TagChip.astro';
+import ViewCount from './ViewCount.astro';
+
+interface Props {
+  post: PostSummary;
+}
+
+const { post } = Astro.props;
+const thumb = imageFor(post.coverImage)?.width(160).height(160).url();
+---
+
+<li class="row">
+  <a class="row__hit" href={`/posts/${post.slug}`}>
+    <span class="row__thumb">
+      {
+        thumb ? (
+          <img src={thumb} alt="" width="80" height="80" loading="lazy" decoding="async" />
+        ) : (
+          <span class="row__glyph" aria-hidden="true">
+            {post.emoji ?? ''}
+          </span>
+        )
+      }
+    </span>
+    <span class="row__title">{post.title}</span>
+  </a>
+
+  <div class="row__side">
+    {
+      post.tags.length > 0 && (
+        <ul class="row__tags">
+          {post.tags.map((tag) => (
+            <li>
+              <TagChip tag={tag} as="static" />
+            </li>
+          ))}
+        </ul>
+      )
+    }
+    <span class="row__meta">
+      {post.seriesNumber && <span class="row__series">Kể chuyện #{post.seriesNumber}</span>}
+      <time datetime={post.publishedAt}>{formatDate(post.publishedAt)}</time>
+      <ViewCount slug={post.slug} />
+    </span>
+  </div>
+</li>
+
+<style>
+  /* A database row, not a card: no border, no shadow, no panel.
+     The only chrome is the highlight that follows the pointer. */
+  .row {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+    padding: 0.55rem 0.6rem;
+    margin-inline: -0.6rem;
+    border-radius: var(--r-md);
+    border-bottom: 1px solid var(--line);
+    transition: background-color 140ms ease;
+  }
+
+  .row:hover {
+    background: var(--bg-hover);
+    border-bottom-color: transparent;
+  }
+
+  .row:last-child {
+    border-bottom-color: transparent;
+  }
+
+  .row__hit {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    min-width: 0;
+    flex: 1 1 18rem;
+    text-decoration: none;
+  }
+
+  /* The whole row is clickable, while the tag pills stay on top of it. */
+  .row__hit::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+  }
+
+  .row__thumb {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    border-radius: var(--r-sm);
+    overflow: hidden;
+    background: var(--bg-soft);
+  }
+
+  .row__thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .row__glyph {
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  .row__title {
+    min-width: 0;
+    font-size: var(--step-1);
+    font-weight: 500;
+    line-height: 1.35;
+    color: var(--text);
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-underline-offset: 0.2em;
+    transition: text-decoration-color 140ms ease;
+  }
+
+  .row:hover .row__title {
+    text-decoration-color: var(--line-strong);
+  }
+
+  .row__side {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.75rem;
+  }
+
+  .row__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .row__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: var(--step--1);
+    color: var(--text-3);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .row__series {
+    color: var(--accent);
+  }
+
+  @media (max-width: 640px) {
+    .row {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+
+    .row__side {
+      padding-left: 3.1rem;
+    }
+  }
+</style>

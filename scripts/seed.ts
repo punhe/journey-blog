@@ -293,7 +293,7 @@ export default async function handler(request: Request) {
       {
         p: 'Công việc của tôi gần như không có việc nào kết thúc gọn ghẽ trong một buổi. Ticket nối ticket, review nối review. Cốc cà phê thì có. Nó bắt đầu và nó xong.',
       },
-      { p: 'Có hôm pha hỏng. Cũng không sao — hỏng cũng là một kết thúc rõ ràng.' },
+      { p: 'Có hôm pha hỏng. Cũng không sao, vì hỏng cũng là một kết thúc rõ ràng.' },
     ],
   },
   {
@@ -318,7 +318,7 @@ export default async function handler(request: Request) {
 const ABOUT: BodyItem[] = [
   { p: 'Chào xìn. Tôi viết ở đây vào những buổi tối không có việc gấp.' },
   {
-    p: 'Chỗ này có hai loại bài. Một là ghi chép kỹ thuật: thứ tôi vừa dựng, thứ vừa hỏng, và lý do tôi chọn cách này thay vì cách kia. Hai là chuyện đi, chuyện làm, chuyện nghĩ lung tung — ghi lại trước khi quên.',
+    p: 'Chỗ này có hai loại bài. Một là ghi chép kỹ thuật: thứ tôi vừa dựng, thứ vừa hỏng, và lý do tôi chọn cách này thay vì cách kia. Hai là chuyện đi, chuyện làm, chuyện nghĩ lung tung, ghi lại trước khi quên.',
   },
 ];
 

@@ -14,10 +14,10 @@ const { tags } = Astro.props;
   <span class="anchor" id="all"></span>
   <span class="anchor" id="tags"></span>
 
-  <div class="shell">
-    <nav class="tabs" aria-label="Post views">
-      <a class="tab tab--all" href="#all">All blogs</a>
-      <a class="tab tab--tags" href="#tags">Tags</a>
+  <div class="page">
+    <nav class="tabs" aria-label="Cách xem bài">
+      <a class="tab tab--all" href="#all">Tất cả</a>
+      <a class="tab tab--tags" href="#tags">Theo thẻ</a>
     </nav>
   </div>
 
@@ -26,7 +26,7 @@ const { tags } = Astro.props;
   </div>
 
   <div class="panel panel--tags">
-    <div class="shell">
+    <div class="page">
       {
         tags.length > 0 ? (
           <ul class="tag-list">
@@ -37,7 +37,7 @@ const { tags } = Astro.props;
             ))}
           </ul>
         ) : (
-          <p class="empty">No tags yet. Add one in the Studio.</p>
+          <p class="empty">Chưa có thẻ nào.</p>
         )
       }
     </div>
@@ -59,33 +59,35 @@ const { tags } = Astro.props;
 
   .tabs {
     display: flex;
-    gap: 1.75rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid var(--rule);
+    gap: 0.25rem;
+    border-bottom: 1px solid var(--line);
   }
 
   .tab {
     position: relative;
-    padding-bottom: 0.75rem;
-    margin-bottom: -0.8rem;
-    color: var(--ink-faint);
-    font-family: var(--sans);
+    padding: 0.4rem 0.6rem 0.55rem;
+    color: var(--text-3);
     font-size: var(--step-0);
     font-weight: 500;
     text-decoration: none;
-    transition: color 160ms ease;
+    border-radius: var(--r-sm) var(--r-sm) 0 0;
+    transition:
+      color 140ms ease,
+      background-color 140ms ease;
   }
 
   .tab:hover {
-    color: var(--ink-muted);
+    color: var(--text-2);
+    background: var(--bg-hover);
   }
 
   .tab::after {
     content: '';
     position: absolute;
-    inset-inline: 0;
-    bottom: 0;
+    inset-inline: 0.15rem;
+    bottom: -1px;
     height: 2px;
+    border-radius: 2px 2px 0 0;
     background: transparent;
   }
 
@@ -95,7 +97,7 @@ const { tags } = Astro.props;
 
   .panel--tags {
     display: none;
-    padding-top: 2.5rem;
+    padding-top: 1.75rem;
   }
 
   .switch:has(#tags:target) .panel--all {
@@ -106,19 +108,19 @@ const { tags } = Astro.props;
     display: block;
   }
 
-  /* Active tab: "All blogs" unless the tags view is targeted. */
+  /* "Tất cả" is the active tab unless the tag view is targeted. */
   .tab--all,
   .switch:has(#tags:target) .tab--tags {
-    color: var(--ink);
+    color: var(--text);
   }
 
   .tab--all::after,
   .switch:has(#tags:target) .tab--tags::after {
-    background: var(--celadon);
+    background: var(--accent);
   }
 
   .switch:has(#tags:target) .tab--all {
-    color: var(--ink-faint);
+    color: var(--text-3);
   }
 
   .switch:has(#tags:target) .tab--all::after {
@@ -128,7 +130,7 @@ const { tags } = Astro.props;
   .tag-list {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.7rem;
+    gap: 0.5rem;
     margin: 0;
     padding: 0;
     list-style: none;
@@ -136,6 +138,6 @@ const { tags } = Astro.props;
 
   .empty {
     margin: 0;
-    color: var(--ink-faint);
+    color: var(--text-3);
   }
 </style>
