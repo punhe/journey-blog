@@ -2,6 +2,13 @@
 import Header from '../components/Header.astro';
 import '../styles/global.css';
 
+export interface ArticleMeta {
+  publishedAt: string;
+  tags: string[];
+  /** Plain text, used as the article body summary in structured data. */
+  summary?: string;
+}
+
 interface Props {
   title: string;
   description?: string;
@@ -10,10 +17,49 @@ interface Props {
   image?: string | null;
   /** Index pages widen so the gallery grid lines up with the cover. */
   width?: 'reading' | 'wide';
+  /** Present on a post page. Drives og:type, article meta and BlogPosting. */
+  article?: ArticleMeta;
+  authorName?: string;
 }
 
-const { title, description, siteTitle, image, width = 'reading' } = Astro.props;
-const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
+const { title, description, siteTitle, image, width = 'reading', article, authorName } =
+  Astro.props;
+
+const site = Astro.site ?? new URL(Astro.url.origin);
+const canonical = new URL(Astro.url.pathname, site);
+const author = authorName || siteTitle;
+
+/*
+ * Structured data. Search engines use it for rich results, and assistants
+ * quoting the page use it to attribute the answer, which is the whole point
+ * of publishing here.
+ */
+const jsonLd = article
+  ? {
+      '@context': 'https://schema.org',
+      '@type': 'BlogPosting',
+      headline: title.split(' | ')[0],
+      description,
+      datePublished: article.publishedAt,
+      dateModified: article.publishedAt,
+      inLanguage: 'vi-VN',
+      keywords: article.tags.join(', ') || undefined,
+      articleBody: article.summary,
+      image: image ? [image] : undefined,
+      author: { '@type': 'Person', name: author },
+      publisher: { '@type': 'Person', name: author },
+      mainEntityOfPage: { '@type': 'WebPage', '@id': canonical.href },
+      url: canonical.href,
+    }
+  : {
+      '@context': 'https://schema.org',
+      '@type': 'Blog',
+      name: siteTitle,
+      description,
+      inLanguage: 'vi-VN',
+      url: site.href,
+      author: { '@type': 'Person', name: author },
+    };
 ---
 
 <!doctype html>
@@ -23,16 +69,32 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     {description && <meta name="description" content={description} />}
+    <meta name="author" content={author} />
     <link rel="canonical" href={canonical.href} />
     <meta name="generator" content={Astro.generator} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <link rel="alternate" type="application/rss+xml" title={siteTitle} href="/rss.xml" />
 
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={article ? 'article' : 'website'} />
+    <meta property="og:url" content={canonical.href} />
+    <meta property="og:locale" content="vi_VN" />
     <meta property="og:site_name" content={siteTitle} />
     <meta property="og:title" content={title} />
     {description && <meta property="og:description" content={description} />}
     {image && <meta property="og:image" content={image} />}
+    {
+      article && (
+        <Fragment>
+          <meta property="article:published_time" content={article.publishedAt} />
+          <meta property="article:author" content={author} />
+          {article.tags.map((tag) => <meta property="article:tag" content={tag} />)}
+        </Fragment>
+      )
+    }
     <meta name="twitter:card" content={image ? 'summary_large_image' : 'summary'} />
+
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />
 
     {/* Resolve the theme before first paint so the page never flashes. */}
     <script is:inline>

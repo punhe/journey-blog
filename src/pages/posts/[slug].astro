@@ -20,7 +20,8 @@ if (!post) {
   throw new Error(`No published post for slug "${slug}". The route list is out of date.`);
 }
 
-const description = post.excerpt ?? truncate(toPlainText(post.body));
+const bodyText = toPlainText(post.body);
+const description = post.excerpt ?? truncate(bodyText);
 const social = imageFor(post.coverImage)?.width(1200).height(630).url() ?? null;
 ---
 
@@ -29,6 +30,12 @@ const social = imageFor(post.coverImage)?.width(1200).height(630).url() ?? null;
   description={description}
   siteTitle={settings.title}
   image={social}
+  authorName={settings.authorName}
+  article={{
+    publishedAt: post.publishedAt,
+    tags: post.tags.map((tag) => tag.name),
+    summary: bodyText,
+  }}
 >
   <article>
     <PageHeader cover={post.coverImage} icon={post.emoji} title={post.title} eager />
@@ -78,78 +85,3 @@ const social = imageFor(post.coverImage)?.width(1200).height(630).url() ?? null;
     </div>
   </article>
 </BaseLayout>
-
-<style>
-  .props {
-    margin: 1.5rem 0 0;
-    display: grid;
-    gap: 0.35rem;
-    font-size: var(--step-0);
-  }
-
-  .props__row[hidden] {
-    display: none;
-  }
-
-  .props__row {
-    display: grid;
-    grid-template-columns: 7rem minmax(0, 1fr);
-    align-items: baseline;
-    gap: 0.75rem;
-  }
-
-  .props dt {
-    color: var(--text-3);
-    font-weight: 500;
-  }
-
-  .props dd {
-    margin: 0;
-    color: var(--text-2);
-  }
-
-  .props__tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.3rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .rule {
-    margin: 1.75rem 0;
-    border: 0;
-    border-top: 1px solid var(--line);
-  }
-
-  .back {
-    margin: 3rem 0 0;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--line);
-    font-size: var(--step-0);
-  }
-
-  .back a {
-    display: inline-block;
-    padding: 0.3rem 0.5rem;
-    margin-left: -0.5rem;
-    border-radius: var(--r-sm);
-    color: var(--text-2);
-    text-decoration: none;
-    transition:
-      background-color 140ms ease,
-      color 140ms ease;
-  }
-
-  .back a:hover {
-    background: var(--bg-hover);
-    color: var(--text);
-  }
-
-  @media (max-width: 560px) {
-    .props__row {
-      grid-template-columns: 5.5rem minmax(0, 1fr);
-    }
-  }
-</style>

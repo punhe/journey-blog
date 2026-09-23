@@ -106,8 +106,9 @@ await Promise.all(
 <script>
   const RESET_AFTER = 1600;
 
-  for (const button of document.querySelectorAll<HTMLButtonElement>('[data-copy]')) {
-    button.addEventListener('click', async () => {
+  document.addEventListener('click', async (event) => {
+    const button = (event.target as HTMLElement | null)?.closest<HTMLButtonElement>('[data-copy]');
+    if (button) {
       const code = button.parentElement?.querySelector('pre')?.textContent;
       if (!code) return;
 
@@ -122,8 +123,8 @@ await Promise.all(
       setTimeout(() => {
         button.textContent = 'Chép';
       }, RESET_AFTER);
-    });
-  }
+    }
+  });
 </script>
 
 <style>

@@ -1,0 +1,264 @@
+---
+/*
+ * Notion-style side peek.
+ *
+ * Every card stays a real <a href="/posts/...">. This script only intercepts
+ * an ordinary left click and shows the post beside the index instead of
+ * replacing it. The URL still changes, Back still closes, and a direct visit,
+ * a middle click, or a crawler all get the full page. Nothing here is load
+ * bearing for search: turn the script off and the site behaves as before.
+ */
+---
+
+<dialog class="peek" data-peek aria-labelledby="peek-title">
+  <div class="peek__bar">
+    <a class="peek__full" data-peek-full href="/">Mở trang đầy đủ</a>
+    <button class="peek__close" type="button" data-peek-close aria-label="Đóng">Đóng</button>
+  </div>
+  <h2 class="sr-only" id="peek-title" data-peek-heading>Bài viết</h2>
+  <div class="peek__body" data-peek-body></div>
+</dialog>
+
+<script>
+  const dialog = document.querySelector<HTMLDialogElement>('[data-peek]');
+  const body = document.querySelector<HTMLElement>('[data-peek-body]');
+  const fullLink = document.querySelector<HTMLAnchorElement>('[data-peek-full]');
+  const heading = document.querySelector<HTMLElement>('[data-peek-heading]');
+
+  if (dialog && body && fullLink && heading) {
+    // Aliases so the narrowed types survive into the hoisted functions below.
+    const panel = dialog;
+    const panelBody = body;
+    const panelLink = fullLink;
+    const panelHeading = heading;
+
+    const indexUrl = location.href;
+    const indexTitle = document.title;
+    const cache = new Map<string, string>();
+
+    let pushed = false;
+    let closingFromHistory = false;
+    let opener: HTMLElement | null = null;
+
+    function isPlainClick(event: MouseEvent) {
+      return (
+        event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey
+      );
+    }
+
+    async function render(url: string) {
+      panelBody.innerHTML = '<p class="peek__state">Đang mở…</p>';
+
+      try {
+        let html = cache.get(url);
+        if (html === undefined) {
+          const res = await fetch(url, { headers: { Accept: 'text/html' } });
+          if (!res.ok) throw new Error(String(res.status));
+          html = await res.text();
+          cache.set(url, html);
+        }
+
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const article = doc.querySelector('main article');
+        if (!article) throw new Error('no article');
+
+        const title = doc.title;
+        panelBody.replaceChildren(article);
+        panelHeading.textContent = title.split(' | ')[0] ?? 'Bài viết';
+        document.title = title;
+        panelBody.scrollTop = 0;
+
+        // Let the counter script count this visit and find its new node.
+        document.dispatchEvent(new CustomEvent('peek:loaded', { detail: { root: body } }));
+      } catch {
+        panelBody.innerHTML =
+          '<p class="peek__state">Không mở được ở đây. <a data-peek-retry href="">Mở trang đầy đủ</a></p>';
+        const retry = panelBody.querySelector<HTMLAnchorElement>('[data-peek-retry]');
+        if (retry) retry.href = url;
+      }
+    }
+
+    function open(url: string, trigger: HTMLElement | null) {
+      opener = trigger;
+      panelLink.href = url;
+      history.pushState({ peek: url }, '', url);
+      pushed = true;
+      panel.showModal();
+      document.documentElement.style.overflow = 'hidden';
+      void render(url);
+    }
+
+    panel.addEventListener('close', () => {
+      document.documentElement.style.overflow = '';
+      document.title = indexTitle;
+      panelBody.replaceChildren();
+
+      if (pushed && !closingFromHistory) {
+        pushed = false;
+        history.back();
+      }
+      pushed = false;
+      closingFromHistory = false;
+      opener?.focus();
+      opener = null;
+    });
+
+    document.querySelector('[data-peek-close]')?.addEventListener('click', () => panel.close());
+
+    // Clicking the backdrop means clicking the dialog itself, not its content.
+    panel.addEventListener('click', (event) => {
+      if (event.target === panel) panel.close();
+    });
+
+    window.addEventListener('popstate', () => {
+      if (panel.open) {
+        closingFromHistory = true;
+        panel.close();
+      }
+    });
+
+    document.addEventListener('click', (event) => {
+      const mouse = event as MouseEvent;
+      if (!isPlainClick(mouse)) return;
+
+      const link = (mouse.target as HTMLElement | null)?.closest<HTMLAnchorElement>('a[href]');
+      if (!link || link.target === '_blank' || link.hasAttribute('download')) return;
+      if (link.closest('[data-peek]')) return;
+
+      const url = new URL(link.href, location.href);
+      if (url.origin !== location.origin) return;
+      if (!url.pathname.startsWith('/posts/')) return;
+
+      mouse.preventDefault();
+      open(url.href, link);
+    });
+
+    window.addEventListener('pageshow', () => {
+      // Returning through the back/forward cache with a post URL in the bar
+      // would otherwise leave the index showing the wrong address.
+      if (!panel.open && location.href !== indexUrl) history.replaceState({}, '', indexUrl);
+    });
+  }
+</script>
+
+<style>
+  .peek {
+    position: fixed;
+    inset: 0 0 0 auto;
+    width: min(46rem, 94vw);
+    max-width: none;
+    height: 100dvh;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-left: 1px solid var(--line);
+    background: var(--bg);
+    color: var(--text);
+    overflow: hidden;
+  }
+
+  .peek[open] {
+    display: flex;
+    flex-direction: column;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .peek[open] {
+      animation: peek-in 260ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .peek[open]::backdrop {
+      animation: peek-fade 260ms ease;
+    }
+  }
+
+  @keyframes peek-in {
+    from {
+      translate: 100% 0;
+    }
+  }
+
+  @keyframes peek-fade {
+    from {
+      opacity: 0;
+    }
+  }
+
+  .peek::backdrop {
+    background: rgba(20, 20, 19, 0.45);
+  }
+
+  .peek__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex: none;
+    padding: 0.55rem 0.75rem;
+    border-bottom: 1px solid var(--line);
+    background: var(--bg);
+  }
+
+  .peek__full,
+  .peek__close {
+    padding: 0.26rem 0.6rem;
+    border: 0;
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--text-2);
+    font-family: inherit;
+    font-size: var(--step--1);
+    font-weight: 500;
+    line-height: 1.6;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+      background-color 140ms ease,
+      color 140ms ease;
+  }
+
+  .peek__full:hover,
+  .peek__close:hover {
+    background: var(--bg-hover);
+    color: var(--text);
+  }
+
+  .peek__body {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-bottom: 3rem;
+  }
+
+  /* Inside the panel the post is narrower, so it keeps a reading measure
+     without the wide page gutters. */
+  .peek__body :global(.page) {
+    width: min(100% - 2.5rem, 36rem);
+  }
+
+  .peek__body :global(.head) {
+    padding-top: 0;
+  }
+
+  .peek__body :global(.head__cover) {
+    width: 100%;
+    border-radius: 0;
+  }
+
+  .peek__body :global(.code) {
+    margin-inline: 0;
+  }
+
+  .peek__state {
+    padding: 2rem 1.5rem;
+    color: var(--text-3);
+  }
+
+  @media (max-width: 720px) {
+    .peek {
+      width: 100vw;
+      border-left: 0;
+    }
+  }
+</style>

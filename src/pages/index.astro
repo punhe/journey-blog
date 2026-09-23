@@ -4,6 +4,7 @@ import Callout from '../components/Callout.astro';
 import PageHeader from '../components/PageHeader.astro';
 import PostList from '../components/PostList.astro';
 import TagFilterTabs from '../components/TagFilterTabs.astro';
+import PeekPanel from '../components/PeekPanel.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getAllPosts, getAllTags, getSiteSettings, imageFor } from '../lib/sanity';
 
@@ -22,6 +23,7 @@ const social = imageFor(settings.bannerImage)?.width(1200).height(630).url() ?? 
   siteTitle={settings.title}
   image={social}
   width="wide"
+  authorName={settings.authorName}
 >
   <PageHeader cover={settings.bannerImage} title={settings.title} eager>
     <Callout text={settings.introCallout} />
@@ -32,4 +34,6 @@ const social = imageFor(settings.bannerImage)?.width(1200).height(630).url() ?? 
   </TagFilterTabs>
 
   <AboutSection image={settings.aboutImage} body={settings.aboutBody} />
+
+  <PeekPanel />
 </BaseLayout>

@@ -1,0 +1,28 @@
+User-agent: *
+Allow: /
+Disallow: /studio
+
+# The point of this blog is to be read and quoted, including by assistants.
+# These crawlers are named so the permission is explicit rather than implied.
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+Sitemap: https://blog.punhelabs.io.vn/sitemap-index.xml

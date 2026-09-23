@@ -2,6 +2,7 @@
 import type { GetStaticPaths } from 'astro';
 import PostList from '../../components/PostList.astro';
 import TagChip from '../../components/TagChip.astro';
+import PeekPanel from '../../components/PeekPanel.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getAllTags, getPostsByTag, getSiteSettings, getTagBySlug } from '../../lib/sanity';
 
@@ -29,6 +30,7 @@ const count = `${posts.length} bài`;
   description={`Các bài mang thẻ ${tag.name}.`}
   siteTitle={settings.title}
   width="wide"
+  authorName={settings.authorName}
 >
   <div class="page crumbs">
     <a href="/#tags">Thẻ</a>
@@ -44,6 +46,8 @@ const count = `${posts.length} bài`;
   </header>
 
   <PostList posts={posts} emptyMessage="Chưa có bài nào mang thẻ này." />
+
+  <PeekPanel />
 </BaseLayout>
 
 <style>

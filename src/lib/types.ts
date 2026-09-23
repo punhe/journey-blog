@@ -72,6 +72,7 @@ export interface Post extends PostSummary {
 
 export interface SiteSettings {
   title: string;
+  authorName?: string;
   bannerImage?: SanityImage;
   introCallout?: string;
   aboutImage?: SanityImage;

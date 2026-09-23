@@ -76,7 +76,7 @@ const FALLBACK_SETTINGS: SiteSettings = { title: 'My Journal Blog' };
 export async function getSiteSettings(): Promise<SiteSettings> {
   const settings = await sanityClient.fetch<SiteSettings | null>(
     /* groq */ `*[_type == "siteSettings" && !(_id in path("drafts.**"))][0] {
-      title, bannerImage, introCallout, aboutImage, aboutBody
+      title, authorName, bannerImage, introCallout, aboutImage, aboutBody
     }`,
   );
 

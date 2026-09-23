@@ -14,9 +14,8 @@ const { slug, increment = false } = Astro.props;
 <script>
   type ViewsResponse = { views: Record<string, number> | null };
 
-  const nodes = Array.from(
-    document.querySelectorAll<HTMLElement>('[data-views]'),
-  );
+  /** Counters already handled, so a re-run never counts a post twice. */
+  const seen = new WeakSet<HTMLElement>();
 
   function show(node: HTMLElement, count: number) {
     const formatted = new Intl.NumberFormat().format(count);
@@ -25,7 +24,7 @@ const { slug, increment = false } = Astro.props;
     node.closest('[data-views-row]')?.removeAttribute('hidden');
   }
 
-  function apply(views: Record<string, number> | null) {
+  function apply(nodes: HTMLElement[], views: Record<string, number> | null) {
     if (!views) return; // Store unavailable: leave the counter hidden.
     for (const node of nodes) {
       const slug = node.dataset.views;
@@ -33,7 +32,13 @@ const { slug, increment = false } = Astro.props;
     }
   }
 
-  async function load() {
+  async function load(root: ParentNode = document) {
+    const nodes = Array.from(root.querySelectorAll<HTMLElement>('[data-views]')).filter(
+      (node) => !seen.has(node),
+    );
+    if (nodes.length === 0) return;
+    for (const node of nodes) seen.add(node);
+
     const toIncrement = nodes.filter((n) => n.dataset.viewsIncrement === 'true');
     const toRead = nodes.filter((n) => n.dataset.viewsIncrement !== 'true');
 
@@ -42,24 +47,30 @@ const { slug, increment = false } = Astro.props;
       if (!slug) continue;
       const res = await fetch(`/api/views?slug=${encodeURIComponent(slug)}`, { method: 'POST' });
       if (!res.ok) continue;
-      apply(((await res.json()) as ViewsResponse).views);
+      apply(nodes, ((await res.json()) as ViewsResponse).views);
     }
 
-    // One batched read for every other counter on the page, 100 slugs per call.
+    // One batched read for every other counter, 100 slugs per call.
     const slugs = toRead.map((n) => n.dataset.views).filter((s): s is string => Boolean(s));
     for (let i = 0; i < slugs.length; i += 100) {
       const chunk = slugs.slice(i, i + 100);
       const res = await fetch(`/api/views?slugs=${encodeURIComponent(chunk.join(','))}`);
       if (!res.ok) continue;
-      apply(((await res.json()) as ViewsResponse).views);
+      apply(nodes, ((await res.json()) as ViewsResponse).views);
     }
   }
 
-  if (nodes.length > 0) {
-    load().catch(() => {
-      /* Counter stays hidden. It is never the reason a page looks broken. */
-    });
-  }
+  const quiet = () => {
+    /* A counter is never the reason a page looks broken. */
+  };
+
+  load().catch(quiet);
+
+  // The side panel loads a post after the page, so count that visit too.
+  document.addEventListener('peek:loaded', (event) => {
+    const root = (event as CustomEvent<{ root: ParentNode }>).detail?.root;
+    if (root) load(root).catch(quiet);
+  });
 </script>
 
 <style>

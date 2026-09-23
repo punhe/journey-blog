@@ -13,6 +13,12 @@ export const siteSettings = defineType({
       validation: (rule) => rule.required(),
     }),
     defineField({
+      name: 'authorName',
+      title: 'Author name',
+      type: 'string',
+      description: 'Shown as the author in search results and structured data.',
+    }),
+    defineField({
       name: 'bannerImage',
       title: 'Banner image',
       type: 'image',
