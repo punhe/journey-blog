@@ -1,0 +1,152 @@
+---
+import { formatDate, imageFor } from '../lib/sanity';
+import type { PostSummary } from '../lib/types';
+import TagChip from './TagChip.astro';
+import ViewCount from './ViewCount.astro';
+
+interface Props {
+  post: PostSummary;
+  /** The first row loads eagerly; the rest wait. */
+  eager?: boolean;
+}
+
+const { post, eager = false } = Astro.props;
+const cover = imageFor(post.coverImage)?.width(700).height(460).url();
+---
+
+{/* A Notion gallery card. The title link stretches over the card, so the tag
+    pills underneath can stay real links without nesting anchors. */}
+<article class="card">
+  {
+    cover ? (
+      <img
+        class="card__art"
+        src={cover}
+        alt={post.coverImage?.alt ?? ''}
+        width="700"
+        height="460"
+        loading={eager ? 'eager' : 'lazy'}
+        fetchpriority={eager ? 'high' : 'auto'}
+        decoding="async"
+      />
+    ) : (
+      <span class="card__art card__art--bare" aria-hidden="true">
+        {post.emoji ?? ''}
+      </span>
+    )
+  }
+
+  <div class="card__body">
+    <h3 class="card__title">
+      <a class="card__hit" href={`/posts/${post.slug}`}>{post.title}</a>
+    </h3>
+
+    {
+      post.tags.length > 0 && (
+        <ul class="card__tags">
+          {post.tags.map((tag) => (
+            <li>
+              <TagChip tag={tag} />
+            </li>
+          ))}
+        </ul>
+      )
+    }
+
+    <p class="card__meta">
+      {post.seriesNumber && <span class="card__series">Kể chuyện #{post.seriesNumber}</span>}
+      <time datetime={post.publishedAt}>{formatDate(post.publishedAt)}</time>
+      <ViewCount slug={post.slug} />
+    </p>
+  </div>
+</article>
+
+<style>
+  .card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    background: var(--bg);
+    overflow: hidden;
+    transition:
+      border-color 160ms ease,
+      box-shadow 160ms ease;
+  }
+
+  /* One hover move, not three: the card lifts off the page. */
+  .card:hover {
+    border-color: var(--line-strong);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .card__art {
+    width: 100%;
+    aspect-ratio: 35 / 23;
+    object-fit: cover;
+    background: var(--bg-soft);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .card__art--bare {
+    display: grid;
+    place-items: center;
+    font-size: 2rem;
+  }
+
+  .card__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.75rem 0.85rem 0.85rem;
+  }
+
+  .card__title {
+    margin: 0;
+    font-size: var(--step-1);
+    font-weight: 600;
+    line-height: 1.32;
+    letter-spacing: -0.012em;
+  }
+
+  .card__hit {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .card__hit::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+  }
+
+  .card__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    position: relative;
+    z-index: 1;
+  }
+
+  .card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+    margin: auto 0 0;
+    padding-top: 0.15rem;
+    font-size: var(--step--1);
+    color: var(--text-3);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .card__series {
+    color: var(--accent);
+  }
+</style>

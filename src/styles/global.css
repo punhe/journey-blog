@@ -100,7 +100,8 @@
   --r-pill: 999px;
 
   --gutter: clamp(1.125rem, 4vw, 2rem);
-  --measure: 46rem;
+  --measure: 42rem;
+  --page-w: var(--measure);
   --section-gap: clamp(3rem, 6vw, 4.5rem);
 }
 
@@ -147,9 +148,10 @@ a {
   background: var(--accent-soft);
 }
 
-/* The page column, the width of a Notion page. */
+/* The page column. Reading pages keep the measure; index pages widen so the
+   gallery grid and the cover line up. */
 .page {
-  width: min(100% - var(--gutter) * 2, var(--measure));
+  width: min(100% - var(--gutter) * 2, var(--page-w));
   margin-inline: auto;
 }
 

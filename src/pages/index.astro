@@ -21,13 +21,14 @@ const social = imageFor(settings.bannerImage)?.width(1200).height(630).url() ?? 
   description={settings.introCallout}
   siteTitle={settings.title}
   image={social}
+  width="wide"
 >
   <PageHeader cover={settings.bannerImage} title={settings.title} eager>
     <Callout text={settings.introCallout} />
   </PageHeader>
 
   <TagFilterTabs tags={tags}>
-    <PostList posts={posts} lead emptyMessage="Chưa có bài nào. Viết bài đầu tiên trong Studio." />
+    <PostList posts={posts} emptyMessage="Chưa có bài nào. Viết bài đầu tiên trong Studio." />
   </TagFilterTabs>
 
   <AboutSection image={settings.aboutImage} body={settings.aboutBody} />

@@ -8,9 +8,11 @@ interface Props {
   siteTitle: string;
   /** Absolute Sanity image URL for the social preview. */
   image?: string | null;
+  /** Index pages widen so the gallery grid lines up with the cover. */
+  width?: 'reading' | 'wide';
 }
 
-const { title, description, siteTitle, image } = Astro.props;
+const { title, description, siteTitle, image, width = 'reading' } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
 ---
 
@@ -63,7 +65,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
   <body>
     <a class="skip-link" href="#main">Tới nội dung</a>
     <Header siteTitle={siteTitle} />
-    <main id="main">
+    <main id="main" data-width={width}>
       <slot />
     </main>
     <footer class="foot">
@@ -75,6 +77,10 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
 </html>
 
 <style>
+  main[data-width='wide'] {
+    --page-w: 64rem;
+  }
+
   .foot {
     margin-top: var(--section-gap);
     padding-block: 2rem 3rem;

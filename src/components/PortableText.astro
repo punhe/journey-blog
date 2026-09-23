@@ -136,11 +136,13 @@ await Promise.all(
   .prose :global(p),
   .prose :global(ul),
   .prose :global(ol) {
+    max-width: var(--measure);
     margin-block: 0 1.15em;
   }
 
   .prose :global(h2),
   .prose :global(h3) {
+    max-width: var(--measure);
     font-weight: 700;
     line-height: 1.25;
     letter-spacing: -0.018em;

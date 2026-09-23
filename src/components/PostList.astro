@@ -1,51 +1,67 @@
 ---
 import type { PostSummary } from '../lib/types';
-import FeaturedPost from './FeaturedPost.astro';
-import PostRow from './PostRow.astro';
+import PostCard from './PostCard.astro';
 
 interface Props {
   posts: PostSummary[];
-  /** The newest post gets the larger treatment on the home page only. */
-  lead?: boolean;
   emptyMessage?: string;
 }
 
-const { posts, lead = false, emptyMessage = 'Chưa có bài nào.' } = Astro.props;
-const [first, ...rest] = posts;
-const rows = lead ? rest : posts;
+const { posts, emptyMessage = 'Chưa có bài nào.' } = Astro.props;
 ---
 
-<div class="page list">
+<div class="page wrap">
   {
-    posts.length === 0 ? (
-      <p class="list__empty">{emptyMessage}</p>
+    posts.length > 0 ? (
+      <ul class="grid">
+        {posts.map((post, index) => (
+          <li>
+            <PostCard post={post} eager={index < 3} />
+          </li>
+        ))}
+      </ul>
     ) : (
-      <Fragment>
-        {lead && first && <FeaturedPost post={first} />}
-        {rows.length > 0 && (
-          <ul class="list__rows">
-            {rows.map((post) => (
-              <PostRow post={post} />
-            ))}
-          </ul>
-        )}
-      </Fragment>
+      <p class="empty">{emptyMessage}</p>
     )
   }
 </div>
 
 <style>
-  .list {
-    margin-top: 1.5rem;
+  .wrap {
+    margin-top: 1.75rem;
   }
 
-  .list__rows {
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.1rem;
     margin: 0;
     padding: 0;
     list-style: none;
   }
 
-  .list__empty {
+  .grid > li {
+    display: flex;
+  }
+
+  .grid > li > :global(*) {
+    width: 100%;
+  }
+
+  @media (min-width: 640px) {
+    .grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1.25rem;
+    }
+  }
+
+  .empty {
     margin: 0;
     padding: 1.5rem 0;
     color: var(--text-3);
