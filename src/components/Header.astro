@@ -1,0 +1,48 @@
+---
+interface Props {
+  siteTitle: string;
+}
+
+const { siteTitle } = Astro.props;
+const isHome = Astro.url.pathname === '/';
+---
+
+<header class="site-header">
+  <div class="shell">
+    {
+      isHome ? (
+        <span class="mark">{siteTitle}</span>
+      ) : (
+        <a class="mark mark--link" href="/">
+          {siteTitle}
+        </a>
+      )
+    }
+  </div>
+</header>
+
+<style>
+  .site-header {
+    position: relative;
+    z-index: 2;
+    padding-block: 1.5rem;
+  }
+
+  .mark {
+    font-family: var(--serif);
+    font-size: var(--step-1);
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    color: var(--ink);
+  }
+
+  .mark--link {
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 160ms ease;
+  }
+
+  .mark--link:hover {
+    border-bottom-color: var(--celadon);
+  }
+</style>

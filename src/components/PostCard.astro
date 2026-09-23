@@ -1,0 +1,143 @@
+---
+import { formatDate, imageFor } from '../lib/sanity';
+import type { PostSummary } from '../lib/types';
+import TagChip from './TagChip.astro';
+import ViewCount from './ViewCount.astro';
+
+interface Props {
+  post: PostSummary;
+  /** The first row of cards loads eagerly; the rest are lazy. */
+  eager?: boolean;
+}
+
+const { post, eager = false } = Astro.props;
+const cover = imageFor(post.coverImage)?.width(760).height(500).url();
+---
+
+<article class="card">
+  <a class="card__link" href={`/posts/${post.slug}`}>
+    {
+      cover ? (
+        <img
+          class="card__art"
+          src={cover}
+          alt={post.coverImage?.alt ?? ''}
+          width="760"
+          height="500"
+          loading={eager ? 'eager' : 'lazy'}
+          decoding="async"
+        />
+      ) : (
+        <div class="card__art card__art--empty" aria-hidden="true" />
+      )
+    }
+    <h3 class="card__title">
+      {post.emoji && <span class="card__emoji">{post.emoji}</span>}
+      <span class="card__text">{post.title}</span>
+    </h3>
+  </a>
+
+  <div class="card__meta">
+    {post.seriesNumber && <span class="card__series">Kể chuyện #{post.seriesNumber}</span>}
+    <time datetime={post.publishedAt}>{formatDate(post.publishedAt)}</time>
+    <ViewCount slug={post.slug} />
+  </div>
+
+  {
+    post.tags.length > 0 && (
+      <ul class="card__tags">
+        {post.tags.map((tag) => (
+          <li>
+            <TagChip tag={tag} as="static" />
+          </li>
+        ))}
+      </ul>
+    )
+  }
+</article>
+
+<style>
+  /* No panel, no border, no shadow: the illustration is the card. */
+  .card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .card__link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .card__art {
+    width: 100%;
+    aspect-ratio: 38 / 25;
+    object-fit: cover;
+    border-radius: 4px;
+    background: var(--ground-raised);
+  }
+
+  .card__art--empty {
+    background:
+      repeating-linear-gradient(
+        135deg,
+        var(--ground-raised) 0 10px,
+        var(--ground-sunken) 10px 20px
+      );
+  }
+
+  .card__title {
+    display: flex;
+    gap: 0.45rem;
+    margin: 0.85rem 0 0;
+    font-family: var(--serif);
+    font-size: var(--step-2);
+    font-weight: 400;
+    line-height: 1.25;
+    letter-spacing: -0.005em;
+  }
+
+  .card__emoji {
+    flex: none;
+    font-family: var(--sans);
+    font-size: var(--step-1);
+    line-height: 1.5;
+  }
+
+  /* The single hover move on the page: the title underline draws in. */
+  .card__text {
+    background-image: linear-gradient(var(--celadon), var(--celadon));
+    background-repeat: no-repeat;
+    background-position: 0 100%;
+    background-size: 0 1px;
+    transition: background-size 260ms ease;
+  }
+
+  .card__link:hover .card__text,
+  .card__link:focus-visible .card__text {
+    background-size: 100% 1px;
+  }
+
+  .card__series {
+    color: var(--celadon-dim);
+  }
+
+  .card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+    font-family: var(--sans);
+    font-size: var(--step--1);
+    color: var(--ink-faint);
+  }
+
+  .card__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0.15rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+</style>

@@ -1,0 +1,80 @@
+---
+import { imageFor } from '../lib/sanity';
+import type { SanityImage } from '../lib/types';
+
+interface Props {
+  image?: SanityImage;
+  title: string;
+}
+
+const { image, title } = Astro.props;
+const builder = imageFor(image);
+const src = builder?.width(2000).height(700).url();
+const srcNarrow = builder?.width(900).height(560).url();
+---
+
+<section class:list={['hero', !src && 'hero--bare']}>
+  {
+    src && (
+      <picture class="hero__art">
+        <source media="(max-width: 700px)" srcset={srcNarrow} />
+        <img src={src} alt={image?.alt ?? ''} width="2000" height="700" fetchpriority="high" />
+      </picture>
+    )
+  }
+  <div class="shell">
+    <h1 class="hero__title">{title}</h1>
+  </div>
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    padding-bottom: 0.5rem;
+  }
+
+  /* Full-bleed illustration that dissolves into the page ground, so the
+     title reads as written onto the picture rather than placed under it. */
+  .hero__art {
+    display: block;
+    width: 100%;
+    margin-top: -4.5rem;
+    -webkit-mask-image: linear-gradient(to bottom, #000 45%, transparent 97%);
+    mask-image: linear-gradient(to bottom, #000 45%, transparent 97%);
+  }
+
+  .hero__art img {
+    width: 100%;
+    aspect-ratio: 20 / 7;
+    object-fit: cover;
+  }
+
+  .hero__title {
+    position: relative;
+    margin: -5.5rem 0 0;
+    font-family: var(--serif);
+    font-size: var(--step-5);
+    font-weight: 300;
+    line-height: 1.08;
+    letter-spacing: -0.015em;
+    max-width: 16ch;
+  }
+
+  .hero--bare .hero__title {
+    margin-top: 2rem;
+  }
+
+  @media (max-width: 700px) {
+    .hero__art {
+      margin-top: -3rem;
+    }
+
+    .hero__art img {
+      aspect-ratio: 16 / 10;
+    }
+
+    .hero__title {
+      margin-top: -3.5rem;
+    }
+  }
+</style>

@@ -1,0 +1,69 @@
+---
+import { imageFor } from '../lib/sanity';
+import type { PortableTextNode, SanityImage } from '../lib/types';
+import PortableText from './PortableText.astro';
+
+interface Props {
+  image?: SanityImage;
+  body?: PortableTextNode[];
+}
+
+const { image, body } = Astro.props;
+const portrait = imageFor(image)?.width(640).height(800).url();
+const hasBody = Boolean(body?.length);
+---
+
+{
+  (portrait || hasBody) && (
+    <section class="about" aria-labelledby="about-heading">
+      <div class="shell about__inner">
+        {portrait && (
+          <img
+            class="about__portrait"
+            src={portrait}
+            alt={image?.alt ?? ''}
+            width="640"
+            height="800"
+            loading="lazy"
+            decoding="async"
+          />
+        )}
+        <div class="about__body">
+          <h2 class="sr-only" id="about-heading">
+            About
+          </h2>
+          <PortableText value={body} />
+        </div>
+      </div>
+    </section>
+  )
+}
+
+<style>
+  .about {
+    margin-top: var(--section-gap);
+    padding-top: var(--section-gap);
+    border-top: 1px solid var(--rule);
+  }
+
+  .about__inner {
+    display: grid;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  .about__portrait {
+    width: 100%;
+    max-width: 18rem;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    border-radius: 4px;
+  }
+
+  @media (min-width: 760px) {
+    .about__inner {
+      grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+      gap: 3.5rem;
+    }
+  }
+</style>

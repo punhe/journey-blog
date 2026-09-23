@@ -1,0 +1,100 @@
+---
+import type { GetStaticPaths } from 'astro';
+import PostGrid from '../../components/PostGrid.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getAllTags, getPostsByTag, getSiteSettings, getTagBySlug } from '../../lib/sanity';
+
+export const getStaticPaths = (async () => {
+  const tags = await getAllTags();
+  return tags.map((tag) => ({ params: { slug: tag.slug } }));
+}) satisfies GetStaticPaths;
+
+const { slug } = Astro.params;
+const [tag, posts, settings] = await Promise.all([
+  getTagBySlug(slug!),
+  getPostsByTag(slug!),
+  getSiteSettings(),
+]);
+
+if (!tag) {
+  throw new Error(`No tag for slug "${slug}". The route list is out of date.`);
+}
+
+const heading = [tag.emoji, tag.name].filter(Boolean).join(' ');
+const count = `${posts.length} ${posts.length === 1 ? 'post' : 'posts'}`;
+---
+
+<BaseLayout
+  title={`${tag.name} — ${settings.title}`}
+  description={`Posts tagged ${tag.name}.`}
+  siteTitle={settings.title}
+>
+  <div class="shell">
+    <header class="tag-head">
+      <h1 class="tag-head__title" data-color={tag.color}>{heading}</h1>
+      <p class="tag-head__count">{count}</p>
+    </header>
+  </div>
+
+  <PostGrid posts={posts} emptyMessage="No posts carry this tag yet." />
+
+  <div class="shell">
+    <p class="tag-back"><a href="/#tags">All tags</a></p>
+  </div>
+</BaseLayout>
+
+<style>
+  .tag-head {
+    margin-top: 3.5rem;
+  }
+
+  .tag-head__title {
+    --tag-ink: var(--tag-gray);
+
+    margin: 0;
+    font-family: var(--serif);
+    font-size: var(--step-4);
+    font-weight: 300;
+    line-height: 1.1;
+    letter-spacing: -0.015em;
+    color: var(--tag-ink);
+  }
+
+  .tag-head__title[data-color='blue'] {
+    --tag-ink: var(--tag-blue);
+  }
+  .tag-head__title[data-color='green'] {
+    --tag-ink: var(--tag-green);
+  }
+  .tag-head__title[data-color='brown'] {
+    --tag-ink: var(--tag-brown);
+  }
+  .tag-head__title[data-color='purple'] {
+    --tag-ink: var(--tag-purple);
+  }
+  .tag-head__title[data-color='red'] {
+    --tag-ink: var(--tag-red);
+  }
+  .tag-head__title[data-color='gray'] {
+    --tag-ink: var(--tag-gray);
+  }
+
+  .tag-head__count {
+    margin: 0.7rem 0 0;
+    font-family: var(--sans);
+    font-size: var(--step--1);
+    color: var(--ink-faint);
+  }
+
+  .tag-back {
+    margin: 3.5rem 0 0;
+    font-family: var(--sans);
+    font-size: var(--step-0);
+  }
+
+  .tag-back a {
+    color: var(--celadon);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+  }
+</style>

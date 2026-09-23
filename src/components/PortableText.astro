@@ -1,0 +1,268 @@
+---
+import { bundledLanguages, codeToHtml } from 'shiki';
+import { groupPortableText } from '../lib/portableText';
+import { imageFor } from '../lib/sanity';
+import type { PortableTextNode } from '../lib/types';
+import BlockChildren from './BlockChildren.astro';
+
+interface Props {
+  value?: PortableTextNode[];
+}
+
+const { value } = Astro.props;
+const items = groupPortableText(value);
+
+/** Shiki has no GROQ grammar; JavaScript is close enough to read. */
+const LANGUAGE_ALIASES: Record<string, string> = { groq: 'js', astro: 'html' };
+
+function resolveLanguage(input: string | undefined): string {
+  const name = (input ?? '').trim().toLowerCase();
+  const aliased = LANGUAGE_ALIASES[name] ?? name;
+  return aliased in bundledLanguages ? aliased : 'text';
+}
+
+// Highlighting happens here, at build time, so no highlighter ships to the browser.
+const highlighted = new Map<string, string>();
+
+await Promise.all(
+  items.map(async (item) => {
+    if (item.kind !== 'code' || !item.code.code) return;
+    const html = await codeToHtml(item.code.code, {
+      lang: resolveLanguage(item.code.language),
+      theme: 'vesper',
+      transformers: [
+        {
+          // Drop Shiki's inline background so the block sits on our own ground.
+          pre(node) {
+            const style = String(node.properties.style ?? '');
+            node.properties.style = style.replace(/background-color:[^;]*;?/, '');
+          },
+        },
+      ],
+    });
+    highlighted.set(item.code._key, html);
+  }),
+);
+---
+
+<div class="prose">
+  {
+    items.map((item) => {
+      if (item.kind === 'list') {
+        const List = item.listItem === 'number' ? 'ol' : 'ul';
+        return (
+          <List>
+            {item.items.map((block) => (
+              <li>
+                <BlockChildren block={block} />
+              </li>
+            ))}
+          </List>
+        );
+      }
+
+      if (item.kind === 'code') {
+        const html = highlighted.get(item.code._key);
+        if (!html) return null;
+        return (
+          <div class="code">
+            <button class="code__copy" type="button" data-copy>
+              Copy
+            </button>
+            <Fragment set:html={html} />
+          </div>
+        );
+      }
+
+      if (item.kind === 'image') {
+        const src = imageFor(item.image)?.width(1400).url();
+        if (!src) return null;
+        return (
+          <figure>
+            <img src={src} alt={item.image.alt ?? ''} loading="lazy" decoding="async" />
+            {item.image.caption && <figcaption>{item.image.caption}</figcaption>}
+          </figure>
+        );
+      }
+
+      const { block } = item;
+      if (block.style === 'h2') return <h2><BlockChildren block={block} /></h2>;
+      if (block.style === 'h3') return <h3><BlockChildren block={block} /></h3>;
+      if (block.style === 'blockquote') {
+        return <blockquote><BlockChildren block={block} /></blockquote>;
+      }
+      return <p><BlockChildren block={block} /></p>;
+    })
+  }
+</div>
+
+<script>
+  const RESET_AFTER = 1600;
+
+  for (const button of document.querySelectorAll<HTMLButtonElement>('[data-copy]')) {
+    button.addEventListener('click', async () => {
+      const code = button.parentElement?.querySelector('pre')?.textContent;
+      if (!code) return;
+
+      try {
+        await navigator.clipboard.writeText(code);
+        button.textContent = 'Copied';
+      } catch {
+        // Clipboard blocked (insecure origin, or the reader said no).
+        button.textContent = 'Select it';
+      }
+
+      setTimeout(() => {
+        button.textContent = 'Copy';
+      }, RESET_AFTER);
+    });
+  }
+</script>
+
+<style>
+  .prose {
+    font-family: var(--serif);
+    font-size: var(--step-1);
+    font-weight: 400;
+    line-height: 1.75;
+    color: var(--ink);
+  }
+
+  .prose :global(p),
+  .prose :global(ul),
+  .prose :global(ol) {
+    max-width: var(--measure);
+    margin-block: 0 1.4em;
+  }
+
+  .prose :global(h2),
+  .prose :global(h3) {
+    max-width: var(--measure);
+    font-weight: 400;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+  }
+
+  .prose :global(h2) {
+    margin-block: 2.4em 0.7em;
+    font-size: var(--step-3);
+  }
+
+  .prose :global(h3) {
+    margin-block: 2em 0.6em;
+    font-size: var(--step-2);
+  }
+
+  .prose :global(a) {
+    color: var(--celadon);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.18em;
+  }
+
+  .prose :global(strong) {
+    font-weight: 500;
+  }
+
+  .prose :global(blockquote) {
+    max-width: var(--measure);
+    margin: 2em 0;
+    padding-left: 1.4rem;
+    border-left: 2px solid var(--celadon-dim);
+    font-style: italic;
+    color: var(--ink-muted);
+  }
+
+  .prose :global(ul),
+  .prose :global(ol) {
+    padding-left: 1.3rem;
+  }
+
+  .prose :global(li) {
+    margin-bottom: 0.5em;
+  }
+
+  .prose :global(li)::marker {
+    color: var(--ink-faint);
+  }
+
+  .prose :global(figure) {
+    margin: 2.6em 0;
+  }
+
+  .prose :global(figure img) {
+    width: 100%;
+    border-radius: 4px;
+  }
+
+  .prose :global(figcaption) {
+    margin-top: 0.7rem;
+    font-family: var(--sans);
+    font-size: var(--step--1);
+    color: var(--ink-faint);
+  }
+
+  /* Inline code inside a sentence. */
+  .prose :global(p code),
+  .prose :global(li code) {
+    padding: 0.1em 0.35em;
+    border-radius: 3px;
+    background: var(--ground-raised);
+    font-family: var(--mono);
+    font-size: 0.85em;
+  }
+
+  .code {
+    position: relative;
+    margin: 2.2em 0;
+  }
+
+  /* Prose sits at a 34rem measure, but code lines need more room, so the
+     block steps outside the column once the viewport can spare the space. */
+  @media (min-width: 62rem) {
+    .code {
+      margin-inline: -5rem;
+    }
+  }
+
+  .code :global(pre) {
+    margin: 0;
+    padding: 1.15rem 1.3rem;
+    overflow-x: auto;
+    border: 1px solid var(--rule);
+    border-radius: 5px;
+    background: var(--ground-sunken);
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    line-height: 1.7;
+    tab-size: 2;
+  }
+
+  .code :global(pre:focus-visible) {
+    outline: 2px solid var(--celadon);
+    outline-offset: 2px;
+  }
+
+  .code__copy {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    padding: 0.28em 0.7em;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    background: var(--ground-raised);
+    color: var(--ink-faint);
+    font-family: var(--sans);
+    font-size: var(--step--1);
+    line-height: 1.5;
+    cursor: pointer;
+    transition:
+      color 160ms ease,
+      border-color 160ms ease;
+  }
+
+  .code__copy:hover,
+  .code__copy:focus-visible {
+    color: var(--ink);
+    border-color: var(--celadon-dim);
+  }
+</style>

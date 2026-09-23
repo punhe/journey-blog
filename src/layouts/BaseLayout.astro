@@ -1,0 +1,69 @@
+---
+import Header from '../components/Header.astro';
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  siteTitle: string;
+  /** Absolute Sanity image URL for the social preview. */
+  image?: string | null;
+}
+
+const { title, description, siteTitle, image } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
+---
+
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    {description && <meta name="description" content={description} />}
+    <link rel="canonical" href={canonical.href} />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="theme-color" content="#1c1714" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={siteTitle} />
+    <meta property="og:title" content={title} />
+    {description && <meta property="og:description" content={description} />}
+    {image && <meta property="og:image" content={image} />}
+    <meta name="twitter:card" content={image ? 'summary_large_image' : 'summary'} />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300;1,6..72,400&display=swap"
+    />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <Header siteTitle={siteTitle} />
+    <main id="main">
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <div class="shell">
+        <p>{siteTitle}</p>
+      </div>
+    </footer>
+  </body>
+</html>
+
+<style>
+  .site-footer {
+    margin-top: var(--section-gap);
+    padding-block: 2.5rem 3.5rem;
+    border-top: 1px solid var(--rule);
+    color: var(--ink-faint);
+    font-size: var(--step--1);
+  }
+
+  .site-footer p {
+    margin: 0;
+  }
+</style>

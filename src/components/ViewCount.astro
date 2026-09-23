@@ -1,0 +1,71 @@
+---
+interface Props {
+  slug: string;
+  /** Article pages count the visit; cards only read the number. */
+  increment?: boolean;
+}
+
+const { slug, increment = false } = Astro.props;
+---
+
+<span class="views" data-views={slug} data-views-increment={increment ? 'true' : undefined} hidden>
+</span>
+
+<script>
+  type ViewsResponse = { views: Record<string, number> | null };
+
+  const nodes = Array.from(
+    document.querySelectorAll<HTMLElement>('[data-views]'),
+  );
+
+  function show(node: HTMLElement, count: number) {
+    const formatted = new Intl.NumberFormat().format(count);
+    node.textContent = `${formatted} ${count === 1 ? 'view' : 'views'}`;
+    node.hidden = false;
+  }
+
+  function apply(views: Record<string, number> | null) {
+    if (!views) return; // Store unavailable: leave the counter hidden.
+    for (const node of nodes) {
+      const slug = node.dataset.views;
+      if (slug && typeof views[slug] === 'number') show(node, views[slug]);
+    }
+  }
+
+  async function load() {
+    const toIncrement = nodes.filter((n) => n.dataset.viewsIncrement === 'true');
+    const toRead = nodes.filter((n) => n.dataset.viewsIncrement !== 'true');
+
+    for (const node of toIncrement) {
+      const slug = node.dataset.views;
+      if (!slug) continue;
+      const res = await fetch(`/api/views?slug=${encodeURIComponent(slug)}`, { method: 'POST' });
+      if (!res.ok) continue;
+      apply(((await res.json()) as ViewsResponse).views);
+    }
+
+    // One batched read for every other counter on the page, 100 slugs per call.
+    const slugs = toRead.map((n) => n.dataset.views).filter((s): s is string => Boolean(s));
+    for (let i = 0; i < slugs.length; i += 100) {
+      const chunk = slugs.slice(i, i + 100);
+      const res = await fetch(`/api/views?slugs=${encodeURIComponent(chunk.join(','))}`);
+      if (!res.ok) continue;
+      apply(((await res.json()) as ViewsResponse).views);
+    }
+  }
+
+  if (nodes.length > 0) {
+    load().catch(() => {
+      /* Counter stays hidden. It is never the reason a page looks broken. */
+    });
+  }
+</script>
+
+<style>
+  .views {
+    font-family: var(--sans);
+    font-size: var(--step--1);
+    color: var(--ink-faint);
+    font-variant-numeric: tabular-nums;
+  }
+</style>

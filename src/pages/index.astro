@@ -1,0 +1,33 @@
+---
+import AboutSection from '../components/AboutSection.astro';
+import HeroBanner from '../components/HeroBanner.astro';
+import IntroCallout from '../components/IntroCallout.astro';
+import PostGrid from '../components/PostGrid.astro';
+import TagFilterTabs from '../components/TagFilterTabs.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getAllPosts, getAllTags, getSiteSettings, imageFor } from '../lib/sanity';
+
+const [settings, posts, tags] = await Promise.all([
+  getSiteSettings(),
+  getAllPosts(),
+  getAllTags(),
+]);
+
+const social = imageFor(settings.bannerImage)?.width(1200).height(630).url() ?? null;
+---
+
+<BaseLayout
+  title={settings.title}
+  description={settings.introCallout}
+  siteTitle={settings.title}
+  image={social}
+>
+  <HeroBanner image={settings.bannerImage} title={settings.title} />
+  <IntroCallout text={settings.introCallout} />
+
+  <TagFilterTabs tags={tags}>
+    <PostGrid posts={posts} emptyMessage="No posts yet. Write the first one in the Studio." />
+  </TagFilterTabs>
+
+  <AboutSection image={settings.aboutImage} body={settings.aboutBody} />
+</BaseLayout>

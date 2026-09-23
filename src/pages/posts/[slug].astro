@@ -1,0 +1,157 @@
+---
+import type { GetStaticPaths } from 'astro';
+import PortableText from '../../components/PortableText.astro';
+import TagChip from '../../components/TagChip.astro';
+import ViewCount from '../../components/ViewCount.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { toPlainText, truncate } from '../../lib/portableText';
+import { formatDate, getAllPosts, getPostBySlug, getSiteSettings, imageFor } from '../../lib/sanity';
+
+export const getStaticPaths = (async () => {
+  const posts = await getAllPosts();
+  return posts.map((post) => ({ params: { slug: post.slug } }));
+}) satisfies GetStaticPaths;
+
+const { slug } = Astro.params;
+const [post, settings] = await Promise.all([getPostBySlug(slug!), getSiteSettings()]);
+
+if (!post) {
+  throw new Error(`No published post for slug "${slug}". The route list is out of date.`);
+}
+
+const cover = imageFor(post.coverImage);
+const description = post.excerpt ?? truncate(toPlainText(post.body));
+const social = cover?.width(1200).height(630).url() ?? null;
+---
+
+<BaseLayout
+  title={`${post.title} — ${settings.title}`}
+  description={description}
+  siteTitle={settings.title}
+  image={social}
+>
+  <article class="article">
+    {
+      cover && (
+        <img
+          class="article__cover"
+          src={cover.width(1600).height(900).url()}
+          alt={post.coverImage?.alt ?? ''}
+          width="1600"
+          height="900"
+          fetchpriority="high"
+        />
+      )
+    }
+
+    <header class="shell--narrow article__head">
+      <h1 class="article__title">
+        {post.emoji && <span class="article__emoji">{post.emoji}</span>}
+        {post.title}
+      </h1>
+
+      {
+        post.tags.length > 0 && (
+          <ul class="article__tags">
+            {post.tags.map((tag) => (
+              <li>
+                <TagChip tag={tag} />
+              </li>
+            ))}
+          </ul>
+        )
+      }
+
+      <div class="article__meta">
+        {post.seriesNumber && <span class="article__series">Kể chuyện #{post.seriesNumber}</span>}
+        <time datetime={post.publishedAt}>{formatDate(post.publishedAt)}</time>
+        <ViewCount slug={post.slug} increment />
+      </div>
+    </header>
+
+    <div class="shell--narrow">
+      <PortableText value={post.body} />
+      <p class="article__back"><a href="/">Back to all posts</a></p>
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .article__cover {
+    width: 100%;
+    margin-top: -4.5rem;
+    aspect-ratio: 16 / 9;
+    max-height: 30rem;
+    object-fit: cover;
+    -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent 98%);
+    mask-image: linear-gradient(to bottom, #000 55%, transparent 98%);
+  }
+
+  .article__head {
+    position: relative;
+    margin-top: -4rem;
+    margin-bottom: 3rem;
+  }
+
+  .article__series {
+    color: var(--celadon-dim);
+  }
+
+  .article__title {
+    margin: 0;
+    font-family: var(--serif);
+    font-size: var(--step-4);
+    font-weight: 300;
+    line-height: 1.15;
+    letter-spacing: -0.015em;
+  }
+
+  .article__emoji {
+    font-family: var(--sans);
+    margin-right: 0.4rem;
+  }
+
+  .article__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 1.2rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .article__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+    margin-top: 0.9rem;
+    font-family: var(--sans);
+    font-size: var(--step--1);
+    color: var(--ink-faint);
+  }
+
+  .article__back {
+    margin: 3.5rem 0 0;
+    padding-top: 2rem;
+    border-top: 1px solid var(--rule);
+    font-family: var(--sans);
+    font-size: var(--step-0);
+  }
+
+  .article__back a {
+    color: var(--celadon);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+  }
+
+  @media (max-width: 700px) {
+    .article__cover {
+      margin-top: -3rem;
+      aspect-ratio: 4 / 3;
+    }
+
+    .article__head {
+      margin-top: -2.5rem;
+    }
+  }
+</style>

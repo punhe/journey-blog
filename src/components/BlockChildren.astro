@@ -1,0 +1,17 @@
+---
+import type { PortableTextBlock } from '../lib/types';
+import Mark from './Mark.astro';
+
+interface Props {
+  block: PortableTextBlock;
+}
+
+const { block } = Astro.props;
+const markDefs = block.markDefs ?? [];
+---
+
+{
+  block.children.map((span) => (
+    <Mark marks={span.marks ?? []} markDefs={markDefs} text={span.text} />
+  ))
+}

@@ -1,0 +1,38 @@
+---
+import type { PortableTextMarkDef } from '../lib/types';
+import Self from './Mark.astro';
+
+interface Props {
+  marks: string[];
+  markDefs: PortableTextMarkDef[];
+  text: string;
+}
+
+const { marks, markDefs, text } = Astro.props;
+const [mark, ...rest] = marks;
+const annotation = mark ? markDefs.find((def) => def._key === mark) : undefined;
+---
+
+{
+  !mark ? (
+    <Fragment>{text}</Fragment>
+  ) : annotation?._type === 'link' && annotation.href ? (
+    <a href={annotation.href} rel="noopener noreferrer">
+      <Self marks={rest} markDefs={markDefs} text={text} />
+    </a>
+  ) : mark === 'strong' ? (
+    <strong>
+      <Self marks={rest} markDefs={markDefs} text={text} />
+    </strong>
+  ) : mark === 'em' ? (
+    <em>
+      <Self marks={rest} markDefs={markDefs} text={text} />
+    </em>
+  ) : mark === 'code' ? (
+    <code>
+      <Self marks={rest} markDefs={markDefs} text={text} />
+    </code>
+  ) : (
+    <Self marks={rest} markDefs={markDefs} text={text} />
+  )
+}
