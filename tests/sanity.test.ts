@@ -19,12 +19,11 @@ const postFixture: PostSummary = {
   _id: 'post-1',
   title: 'Một ngày ở Đà Lạt',
   slug: 'mot-ngay-o-da-lat',
-  emoji: '🌫️',
   coverImage,
   excerpt: 'Sương, cà phê, và một buổi sáng chậm.',
   publishedAt: '2026-03-04T09:00:00.000Z',
   seriesNumber: 2,
-  tags: [{ _id: 'tag-1', name: 'Travel', slug: 'travel', emoji: '✈️', color: 'blue' }],
+  tags: [{ _id: 'tag-1', name: 'Travel', slug: 'travel', color: 'blue' }],
 };
 
 beforeEach(() => {

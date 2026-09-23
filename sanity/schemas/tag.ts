@@ -21,12 +21,6 @@ export const tag = defineType({
       validation: (rule) => rule.required(),
     }),
     defineField({
-      name: 'emoji',
-      title: 'Emoji',
-      type: 'string',
-      description: 'One character, shown before the name.',
-    }),
-    defineField({
       name: 'color',
       title: 'Color',
       type: 'string',
@@ -40,12 +34,9 @@ export const tag = defineType({
     }),
   ],
   preview: {
-    select: { title: 'name', subtitle: 'color', emoji: 'emoji' },
-    prepare({ title, subtitle, emoji }) {
-      return {
-        title: [emoji, title].filter(Boolean).join(' '),
-        subtitle: subtitle as string,
-      };
+    select: { title: 'name', subtitle: 'color' },
+    prepare({ title, subtitle }) {
+      return { title: title as string, subtitle: subtitle as string };
     },
   },
 });

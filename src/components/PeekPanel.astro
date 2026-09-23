@@ -10,7 +10,7 @@
  */
 ---
 
-<dialog class="peek" data-peek aria-labelledby="peek-title">
+<dialog class="peek" data-peek tabindex="-1" aria-labelledby="peek-title">
   <div class="peek__bar">
     <a class="peek__full" data-peek-full href="/">Mở trang đầy đủ</a>
     <button class="peek__close" type="button" data-peek-close aria-label="Đóng">Đóng</button>
@@ -84,6 +84,7 @@
       history.pushState({ peek: url }, '', url);
       pushed = true;
       panel.showModal();
+      panel.focus();
       document.documentElement.style.overflow = 'hidden';
       void render(url);
     }
@@ -145,7 +146,7 @@
   .peek {
     position: fixed;
     inset: 0 0 0 auto;
-    width: min(46rem, 94vw);
+    width: min(66.7vw, 72rem);
     max-width: none;
     height: 100dvh;
     max-height: none;
@@ -161,6 +162,12 @@
   .peek[open] {
     display: flex;
     flex-direction: column;
+  }
+
+  /* The panel takes focus on open so a screen reader lands inside it. It is a
+     container, not a control, so it shows no ring. */
+  .peek:focus {
+    outline: none;
   }
 
   @media (prefers-reduced-motion: no-preference) {
@@ -234,7 +241,7 @@
   /* Inside the panel the post is narrower, so it keeps a reading measure
      without the wide page gutters. */
   .peek__body :global(.page) {
-    width: min(100% - 2.5rem, 36rem);
+    width: min(100% - 3rem, 42rem);
   }
 
   .peek__body :global(.head) {

@@ -12,13 +12,12 @@ const POST_SUMMARY_FIELDS = /* groq */ `
   _id,
   title,
   "slug": slug.current,
-  emoji,
   coverImage,
   excerpt,
   publishedAt,
   seriesNumber,
   "tags": coalesce(
-    tags[]->{ _id, name, "slug": slug.current, emoji, color },
+    tags[]->{ _id, name, "slug": slug.current, color },
     []
   )
 `;
@@ -53,7 +52,7 @@ export async function getPostsByTag(tagSlug: string): Promise<PostSummary[]> {
 export async function getAllTags(): Promise<Tag[]> {
   return sanityClient.fetch<Tag[]>(
     /* groq */ `*[_type == "tag" && defined(slug.current)] | order(name asc) {
-      _id, name, "slug": slug.current, emoji, color
+      _id, name, "slug": slug.current, color
     }`,
   );
 }
@@ -61,7 +60,7 @@ export async function getAllTags(): Promise<Tag[]> {
 export async function getTagBySlug(slug: string): Promise<Tag | null> {
   return sanityClient.fetch<Tag | null>(
     /* groq */ `*[_type == "tag" && slug.current == $slug][0] {
-      _id, name, "slug": slug.current, emoji, color
+      _id, name, "slug": slug.current, color
     }`,
     { slug },
   );

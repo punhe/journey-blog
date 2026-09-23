@@ -90,16 +90,15 @@ async function uploadImage(filename: string, png: Buffer) {
 /* -------------------------------------------------------------- content -- */
 
 const TAGS = [
-  { id: 'tag-dev-notes', name: 'Dev Notes', slug: 'dev-notes', emoji: '💻', color: 'blue' },
-  { id: 'tag-ai-tooling', name: 'AI & Tooling', slug: 'ai-tooling', emoji: '🤖', color: 'purple' },
-  { id: 'tag-career-talk', name: 'Career Talk', slug: 'career-talk', emoji: '💼', color: 'brown' },
-  { id: 'tag-travel', name: 'Travel', slug: 'travel', emoji: '✈️', color: 'green' },
-  { id: 'tag-life-style', name: 'Life style', slug: 'life-style', emoji: '🍵', color: 'red' },
+  { id: 'tag-dev-notes', name: 'Dev Notes', slug: 'dev-notes', color: 'blue' },
+  { id: 'tag-ai-tooling', name: 'AI & Tooling', slug: 'ai-tooling', color: 'purple' },
+  { id: 'tag-career-talk', name: 'Career Talk', slug: 'career-talk', color: 'brown' },
+  { id: 'tag-travel', name: 'Travel', slug: 'travel', color: 'green' },
+  { id: 'tag-life-style', name: 'Life style', slug: 'life-style', color: 'red' },
   {
     id: 'tag-self-reflection',
     name: 'Self Reflection',
     slug: 'self-reflection',
-    emoji: '🌙',
     color: 'gray',
   },
 ] as const;
@@ -110,7 +109,6 @@ interface SeedPost {
   id: string;
   title: string;
   slug: string;
-  emoji: string;
   excerpt: string;
   publishedAt: string;
   seriesNumber?: number;
@@ -123,7 +121,6 @@ const POSTS: SeedPost[] = [
     id: 'post-astro-sanity',
     title: 'Dựng blog tĩnh bằng Astro và Sanity',
     slug: 'dung-blog-tinh-bang-astro-va-sanity',
-    emoji: '🧱',
     excerpt: 'Một site tĩnh, một CMS có giao diện, và không có server nào phải trông.',
     publishedAt: '2026-09-18T02:00:00.000Z',
     tags: ['tag-dev-notes'],
@@ -178,7 +175,6 @@ export default defineConfig({
     id: 'post-netlify-blobs',
     title: 'Đếm lượt xem bằng Netlify Blobs',
     slug: 'dem-luot-xem-bang-netlify-blobs',
-    emoji: '🔢',
     excerpt: 'Không cần database. Một function, một key-value store, và chấp nhận đếm sai một chút.',
     publishedAt: '2026-09-09T08:30:00.000Z',
     tags: ['tag-dev-notes'],
@@ -218,7 +214,6 @@ export default async function handler(request: Request) {
     id: 'post-ai-viet-nhap',
     title: 'Để AI viết nháp, mình biên tập',
     slug: 'de-ai-viet-nhap-minh-bien-tap',
-    emoji: '🤖',
     excerpt: 'MCP cho agent ghi thẳng vào CMS. Phần hay nằm ở chỗ nó chỉ được ghi bản nháp.',
     publishedAt: '2026-08-26T10:00:00.000Z',
     tags: ['tag-ai-tooling', 'tag-career-talk'],
@@ -259,7 +254,6 @@ export default async function handler(request: Request) {
     id: 'post-da-lat',
     title: 'Một buổi sáng chậm ở Đà Lạt',
     slug: 'mot-buoi-sang-cham-o-da-lat',
-    emoji: '🌫️',
     excerpt: 'Sương chưa tan, quán chưa mở, và tôi không vội đi đâu cả.',
     publishedAt: '2026-08-14T01:00:00.000Z',
     seriesNumber: 1,
@@ -281,7 +275,6 @@ export default async function handler(request: Request) {
     id: 'post-cafe-sang',
     title: 'Pha cà phê như một cái cớ',
     slug: 'pha-ca-phe-nhu-mot-cai-co',
-    emoji: '☕',
     excerpt: 'Mười phút mỗi sáng để làm một việc duy nhất, từ đầu đến cuối.',
     publishedAt: '2026-07-28T02:30:00.000Z',
     seriesNumber: 2,
@@ -300,7 +293,6 @@ export default async function handler(request: Request) {
     id: 'post-tau-dem',
     title: 'Chuyến tàu đêm ra Bắc',
     slug: 'chuyen-tau-dem-ra-bac',
-    emoji: '🚃',
     excerpt: 'Mười hai tiếng không sóng, và một cuộc nói chuyện với người lạ.',
     publishedAt: '2026-07-05T22:10:00.000Z',
     seriesNumber: 3,
@@ -381,7 +373,6 @@ async function main() {
       _type: 'tag',
       name: tag.name,
       slug: { _type: 'slug', current: tag.slug },
-      emoji: tag.emoji,
       color: tag.color,
     });
   }
@@ -392,7 +383,6 @@ async function main() {
       _type: 'post',
       title: post.title,
       slug: { _type: 'slug', current: post.slug },
-      emoji: post.emoji,
       coverImage: { ...covers[index]!, alt: post.title },
       excerpt: post.excerpt,
       publishedAt: post.publishedAt,

@@ -19,12 +19,6 @@ export const post = defineType({
       validation: (rule) => rule.required(),
     }),
     defineField({
-      name: 'emoji',
-      title: 'Emoji',
-      type: 'string',
-      description: 'One character, shown before the title.',
-    }),
-    defineField({
       name: 'coverImage',
       title: 'Cover image',
       type: 'image',
@@ -133,10 +127,10 @@ export const post = defineType({
     },
   ],
   preview: {
-    select: { title: 'title', emoji: 'emoji', media: 'coverImage', date: 'publishedAt' },
-    prepare({ title, emoji, media, date }) {
+    select: { title: 'title', media: 'coverImage', date: 'publishedAt' },
+    prepare({ title, media, date }) {
       return {
-        title: [emoji, title].filter(Boolean).join(' '),
+        title: title as string,
         subtitle: date ? new Date(date as string).toISOString().slice(0, 10) : 'No date',
         media,
       };

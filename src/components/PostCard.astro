@@ -30,9 +30,7 @@ const cover = imageFor(post.coverImage)?.width(700).height(460).url();
         decoding="async"
       />
     ) : (
-      <span class="card__art card__art--bare" aria-hidden="true">
-        {post.emoji ?? ''}
-      </span>
+      <span class="card__art card__art--bare" aria-hidden="true" />
     )
   }
 
@@ -91,9 +89,7 @@ const cover = imageFor(post.coverImage)?.width(700).height(460).url();
   }
 
   .card__art--bare {
-    display: grid;
-    place-items: center;
-    font-size: 2rem;
+    display: block;
   }
 
   .card__body {

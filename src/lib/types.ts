@@ -50,7 +50,6 @@ export interface Tag {
   _id: string;
   name: string;
   slug: string;
-  emoji?: string;
   color: TagColor;
 }
 
@@ -58,7 +57,6 @@ export interface PostSummary {
   _id: string;
   title: string;
   slug: string;
-  emoji?: string;
   coverImage?: SanityImage;
   excerpt?: string;
   publishedAt: string;

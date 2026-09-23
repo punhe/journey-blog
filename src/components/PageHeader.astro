@@ -4,13 +4,11 @@ import type { SanityImage } from '../lib/types';
 
 interface Props {
   cover?: SanityImage;
-  /** Notion-style page icon. One character, chosen by the author. */
-  icon?: string;
   title: string;
   eager?: boolean;
 }
 
-const { cover, icon, title, eager = false } = Astro.props;
+const { cover, title, eager = false } = Astro.props;
 const builder = imageFor(cover);
 const src = builder?.width(1600).height(534).url();
 const srcNarrow = builder?.width(800).height(340).url();
@@ -34,7 +32,6 @@ const srcNarrow = builder?.width(800).height(340).url();
   }
 
   <div class="page head__body">
-    {icon && <span class="head__icon" aria-hidden="true">{icon}</span>}
     <h1 class="head__title">{title}</h1>
     <slot />
   </div>
@@ -61,20 +58,7 @@ const srcNarrow = builder?.width(800).height(340).url();
   }
 
   .head__body {
-    padding-top: 1.25rem;
-  }
-
-  /* The icon sits half over the cover, the way a Notion page icon does. */
-  .head__icon {
-    display: block;
-    margin-top: -3.25rem;
-    margin-bottom: 0.5rem;
-    font-size: 3rem;
-    line-height: 1;
-  }
-
-  .head--bare .head__icon {
-    margin-top: 0;
+    padding-top: 1.5rem;
   }
 
   .head__title {
@@ -90,9 +74,5 @@ const srcNarrow = builder?.width(800).height(340).url();
       aspect-ratio: 7 / 3;
     }
 
-    .head__icon {
-      margin-top: -2.5rem;
-      font-size: 2.5rem;
-    }
   }
 </style>
