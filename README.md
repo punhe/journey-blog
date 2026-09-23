@@ -140,6 +140,9 @@ Repeat visits by the same reader count; there is no dedupe.
 
 Two caveats, both deliberate:
 
+- The store is opened in strong consistency mode. Blobs reads are eventually
+  consistent by default, which made every increment read a stale number and
+  the count stuck at 1.
 - The increment reads and then writes. Netlify Blobs has no compare-and-set,
   so two overlapping requests can lose one increment.
 - If the store cannot be reached, the function answers `200` with

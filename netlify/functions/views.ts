@@ -8,6 +8,11 @@
  * Storage is Netlify Blobs: store `post-views`, key = slug, value = the count
  * as a decimal string.
  *
+ * The store runs in strong consistency mode. Netlify Blobs reads are
+ * eventually consistent by default, which made every increment read a stale
+ * number: the count went to 1 and stayed there. Strong reads cost more
+ * latency and are worth it here.
+ *
  * The increment reads and then writes. Netlify Blobs has no compare-and-set,
  * so two requests that overlap can both read the same number and one increment
  * is lost. A personal blog does not need exact counts, and the alternative
@@ -81,7 +86,7 @@ export default async function handler(request: Request): Promise<Response> {
   }
 
   try {
-    const store = getStore(STORE_NAME);
+    const store = getStore({ name: STORE_NAME, consistency: 'strong' });
     const views: Record<string, number> = {};
 
     if (method === 'POST') {

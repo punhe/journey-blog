@@ -13,8 +13,10 @@ const setMock = vi.fn(async (key: string, value: string) => {
   store.set(key, value);
 });
 
+const getStoreMock = vi.fn(() => ({ get: getMock, set: setMock }));
+
 vi.mock('@netlify/blobs', () => ({
-  getStore: () => ({ get: getMock, set: setMock }),
+  getStore: (...args: unknown[]) => getStoreMock(...(args as [])),
 }));
 
 const { default: handler } = await import('../netlify/functions/views');
@@ -28,6 +30,20 @@ beforeEach(() => {
   storeFails = false;
   getMock.mockClear();
   setMock.mockClear();
+  getStoreMock.mockClear();
+});
+
+describe('the store', () => {
+  it('is opened in strong consistency mode', async () => {
+    // Eventually consistent reads made every increment read a stale number,
+    // so the count stuck at 1 on the live deploy.
+    await call('?slug=first-post');
+
+    expect(getStoreMock).toHaveBeenCalledWith({
+      name: 'post-views',
+      consistency: 'strong',
+    });
+  });
 });
 
 describe('GET', () => {
