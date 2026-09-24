@@ -14,7 +14,7 @@
  * hides the counter instead of showing a wrong 0.
  */
 
-import { supabaseFromEnv, TABLE } from './_supabase';
+import { supabaseFromEnv, TABLE } from './_supabase.js';
 
 const SLUG_PATTERN = /^[a-z0-9-]{1,120}$/;
 const MAX_SLUGS = 100;

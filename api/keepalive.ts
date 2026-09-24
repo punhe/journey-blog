@@ -11,7 +11,7 @@
  * so the endpoint answers 401 to anyone else.
  */
 
-import { supabaseFromEnv, TABLE } from './_supabase';
+import { supabaseFromEnv, TABLE } from './_supabase.js';
 
 export async function GET(request: Request): Promise<Response> {
   const secret = process.env.CRON_SECRET;
