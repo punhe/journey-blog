@@ -10,7 +10,7 @@ Design spec: [`docs/superpowers/specs/2026-09-21-journal-blog-design.md`](docs/s
 | Site | Astro 7, static output, TypeScript |
 | Content | Sanity, Studio embedded at `/studio` |
 | Hosting | Vercel (one project: pages, Studio and functions) |
-| View counts | Vercel Function + Upstash Redis |
+| View counts | Vercel Function + Supabase (free), kept awake by a daily Vercel Cron |
 | AI posting | `@sanity/mcp-server` in Claude Code or Claude Desktop |
 
 ## First run
@@ -45,7 +45,7 @@ Design spec: [`docs/superpowers/specs/2026-09-21-journal-blog-design.md`](docs/s
 | Command | What it does |
 |---|---|
 | `npm run dev` | Astro dev server, Studio at `/studio`. No view counts. |
-| `npx vercel dev` | The same plus the `/api` functions. Needs the Redis variables. |
+| `npx vercel dev` | The same plus the `/api` functions. Needs the Supabase variables. |
 | `npm run build` | `astro check`, then a static build into `dist/`. |
 | `npm run preview` | Serves the last build. |
 | `npm test` | Vitest: the views function and the query helpers. |
@@ -84,10 +84,14 @@ Nothing in that chain needs `SANITY_API_TOKEN`: the dataset is public to read.
 2. Add `PUBLIC_SANITY_PROJECT_ID`, `PUBLIC_SANITY_DATASET` and
    `PUBLIC_SITE_URL` to the project's environment variables. The build does
    not need `SANITY_API_TOKEN`.
-3. Add Upstash Redis from Vercel → Storage (Marketplace) and connect it to the
-   project. It sets `KV_REST_API_URL` and `KV_REST_API_TOKEN`. Without them
-   the site works and the view counter stays hidden.
+3. Connect Supabase from Vercel → Storage (Marketplace), free plan. It sets
+   `SUPABASE_URL` and the server keys. Then run
+   `supabase/migrations/20260925000000_post_views.sql` once in the Supabase
+   SQL editor. Without Supabase the site works and the view counter stays
+   hidden.
 4. Add the Vercel project URL to the Sanity CORS origins, with credentials.
+5. Set `CRON_SECRET` to a long random string. Vercel sends it to
+   `/api/keepalive`, and the endpoint refuses callers without it.
 
 ### Rebuild when a post is published
 
@@ -144,10 +148,16 @@ and the site rebuilds.
 Home cards make one batched `GET` after load. An article makes one `POST`.
 Repeat visits by the same reader count; there is no dedupe.
 
-- Counts live in Upstash Redis under `post-views:<slug>`. The increment is
-  Redis `INCR`, so overlapping requests do not lose a count.
-- If Redis is not configured or cannot be reached, the function answers `200`
-  with `"views": null` and the page hides the counter rather than showing `0`.
+- Counts live in the Supabase table `post_views`. The increment is the SQL
+  function `increment_post_view`, one upsert, so overlapping requests do not
+  lose a count. Row level security is on with no policies: only the server
+  key in the functions can read or write.
+- Supabase pauses a free project after about seven days without database
+  activity. `api/keepalive.ts` runs daily at 03:00 UTC (`crons` in
+  `vercel.json`) and makes one small read so the project stays awake.
+- If Supabase is not configured or cannot be reached, the function answers
+  `200` with `"views": null` and the page hides the counter rather than
+  showing `0`.
 
 ## Layout
 
@@ -159,6 +169,8 @@ src/pages/              index, posts/[slug], tags/[slug]
 src/components/         header, hero, cards, tag chips, Portable Text renderer
 src/lib/sanity.ts       client, GROQ queries, image URLs, date format
 api/views.ts            view counter (Vercel Function)
+api/keepalive.ts        daily cron that keeps the Supabase project awake
+supabase/migrations/    post_views table and increment function
 scripts/seed.ts         placeholder content, with a small PNG generator
 tests/                  Vitest
 ```

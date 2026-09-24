@@ -5,18 +5,17 @@
  *   GET  /api/views?slugs=a,b,c     -> { "views": { "a": 12, ... } }  (100 slugs max)
  *   POST /api/views?slug=a          -> { "views": { "a": 13 } }
  *
- * Storage is Upstash Redis through its REST API: key = `post-views:<slug>`,
- * value = the count. The increment is Redis INCR, which is atomic, so two
- * overlapping requests never lose a count.
+ * Storage is the Supabase table `post_views` (slug, views). The increment is
+ * the SQL function `increment_post_view`, one upsert, so two overlapping
+ * requests never lose a count. The schema is in supabase/migrations/.
  *
- * The connection comes from KV_REST_API_URL and KV_REST_API_TOKEN (the names
- * the Vercel Marketplace integration sets), or UPSTASH_REDIS_REST_URL and
- * UPSTASH_REDIS_REST_TOKEN. When they are missing or the store cannot be
- * reached, the response is 200 with `views: null`. The page then hides the
- * counter instead of showing a wrong 0.
+ * When Supabase is not configured or cannot be reached (a paused free
+ * project, for one), the response is 200 with `views: null`. The page then
+ * hides the counter instead of showing a wrong 0.
  */
 
-const KEY_PREFIX = 'post-views:';
+import { supabaseFromEnv, TABLE } from './_supabase';
+
 const SLUG_PATTERN = /^[a-z0-9-]{1,120}$/;
 const MAX_SLUGS = 100;
 
@@ -67,36 +66,26 @@ function toCount(value: string | number | null | undefined): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
 }
 
-/** Upstash Redis over REST. Returns null when the connection is not configured. */
-export function redisStore(env: Record<string, string | undefined> = process.env): ViewStore | null {
-  const url = env.KV_REST_API_URL ?? env.UPSTASH_REDIS_REST_URL;
-  const token = env.KV_REST_API_TOKEN ?? env.UPSTASH_REDIS_REST_TOKEN;
-  if (!url || !token) return null;
-  const endpoint = `${url.replace(/\/$/, '')}/pipeline`;
-
-  async function pipeline(commands: string[][]): Promise<unknown[]> {
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
-      body: JSON.stringify(commands),
-    });
-    if (!res.ok) throw new Error(`Redis answered ${res.status}`);
-
-    const replies = (await res.json()) as { result?: unknown; error?: string }[];
-    return replies.map((reply) => {
-      if (reply.error) throw new Error(reply.error);
-      return reply.result;
-    });
-  }
+/** The Supabase store. Returns null when the connection is not configured. */
+export function supabaseStore(env?: Record<string, string | undefined>): ViewStore | null {
+  const db = supabaseFromEnv(env);
+  if (!db) return null;
 
   return {
     async get(slugs) {
-      const [values] = await pipeline([['MGET', ...slugs.map((slug) => KEY_PREFIX + slug)]]);
-      return values as (string | null)[];
+      // Slugs passed SLUG_PATTERN, so they are safe inside the in.() filter.
+      const rows = (await db.request(
+        `${TABLE}?select=slug,views&slug=in.(${slugs.join(',')})`,
+      )) as { slug: string; views: number }[];
+      const bySlug = new Map(rows.map((row) => [row.slug, row.views]));
+      return slugs.map((slug) => bySlug.get(slug) ?? null);
     },
     async increment(slug) {
-      const [value] = await pipeline([['INCR', KEY_PREFIX + slug]]);
-      return toCount(value as number);
+      const count = await db.request('rpc/increment_post_view', {
+        method: 'POST',
+        body: { p_slug: slug },
+      });
+      return toCount(count as number);
     },
   };
 }
@@ -121,7 +110,7 @@ export function createHandler(getStore: () => ViewStore | null) {
 
     const store = getStore();
     if (!store) {
-      console.error('[views] Redis is not configured. Set KV_REST_API_URL and KV_REST_API_TOKEN.');
+      console.error('[views] Supabase is not configured. Set SUPABASE_URL and SUPABASE_SECRET_KEY.');
       return json({ views: null });
     }
 
@@ -141,13 +130,13 @@ export function createHandler(getStore: () => ViewStore | null) {
 
       return json({ views });
     } catch (error) {
-      console.error('[views] Redis unavailable:', error);
+      console.error('[views] Supabase unavailable:', error);
       return json({ views: null });
     }
   };
 }
 
-const handler = createHandler(() => redisStore());
+const handler = createHandler(() => supabaseStore());
 
 export const GET = handler;
 export const POST = handler;

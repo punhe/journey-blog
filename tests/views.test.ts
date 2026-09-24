@@ -1,17 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createHandler, redisStore, type ViewStore } from '../api/views';
+import { createHandler, supabaseStore, type ViewStore } from '../api/views';
 
 const store = new Map<string, string>();
 let storeFails = false;
 let configured = true;
 
 const getMock = vi.fn(async (slugs: string[]) => {
-  if (storeFails) throw new Error('redis down');
+  if (storeFails) throw new Error('supabase down');
   return slugs.map((slug) => store.get(slug) ?? null);
 });
 
 const incrementMock = vi.fn(async (slug: string) => {
-  if (storeFails) throw new Error('redis down');
+  if (storeFails) throw new Error('supabase down');
   const next = (Number.parseInt(store.get(slug) ?? '0', 10) || 0) + 1;
   store.set(slug, String(next));
   return next;
@@ -32,34 +32,58 @@ beforeEach(() => {
   incrementMock.mockClear();
 });
 
-describe('the Redis store', () => {
+describe('the Supabase store', () => {
+  const env = { SUPABASE_URL: 'https://p.supabase.co/', SUPABASE_SECRET_KEY: 'sb_secret_x' };
+
   it('is null without a connection', () => {
-    expect(redisStore({})).toBeNull();
+    expect(supabaseStore({})).toBeNull();
+    expect(supabaseStore({ SUPABASE_URL: 'https://p.supabase.co' })).toBeNull();
   });
 
-  it('reads the Marketplace variable names and the Upstash ones', () => {
-    expect(redisStore({ KV_REST_API_URL: 'https://r.test', KV_REST_API_TOKEN: 't' })).not.toBeNull();
-    expect(
-      redisStore({ UPSTASH_REDIS_REST_URL: 'https://r.test', UPSTASH_REDIS_REST_TOKEN: 't' }),
-    ).not.toBeNull();
-  });
-
-  it('sends MGET and INCR through the pipeline endpoint', async () => {
-    const fetchMock = vi.fn(async (_url: string, init: RequestInit) => {
-      const [command] = JSON.parse(String(init.body)) as string[][];
-      const result = command![0] === 'MGET' ? ['4', null] : 5;
-      return new Response(JSON.stringify([{ result }]));
-    });
+  it('reads counts with one filtered select, in the order asked', async () => {
+    const fetchMock = vi.fn(async () =>
+      Response.json([{ slug: 'c', views: 7 }, { slug: 'a', views: 3 }]),
+    );
     vi.stubGlobal('fetch', fetchMock);
 
-    const redis = redisStore({ KV_REST_API_URL: 'https://r.test/', KV_REST_API_TOKEN: 't' })!;
-    await expect(redis.get(['a', 'b'])).resolves.toEqual(['4', null]);
-    await expect(redis.increment('a')).resolves.toBe(5);
+    await expect(supabaseStore(env)!.get(['a', 'b', 'c'])).resolves.toEqual([3, null, 7]);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://p.supabase.co/rest/v1/post_views?select=slug,views&slug=in.(a,b,c)',
+      expect.objectContaining({ method: 'GET' }),
+    );
+    vi.unstubAllGlobals();
+  });
 
-    expect(fetchMock.mock.calls[0]![0]).toBe('https://r.test/pipeline');
-    expect(JSON.parse(String(fetchMock.mock.calls[1]![1].body))).toEqual([
-      ['INCR', 'post-views:a'],
+  it('increments through the SQL function', async () => {
+    const fetchMock = vi.fn(async (_url: string, _init: RequestInit) => Response.json(5));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(supabaseStore(env)!.increment('a')).resolves.toBe(5);
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(url).toBe('https://p.supabase.co/rest/v1/rpc/increment_post_view');
+    expect(JSON.parse(String(init.body))).toEqual({ p_slug: 'a' });
+    vi.unstubAllGlobals();
+  });
+
+  it('sends a secret key as apikey only, and a legacy JWT as Bearer too', async () => {
+    const fetchMock = vi.fn(async (_url: string, _init: RequestInit) => Response.json([]));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await supabaseStore(env)!.get(['a']);
+    await supabaseStore({ SUPABASE_URL: env.SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY: 'eyJx' })!.get([
+      'a',
     ]);
+
+    const headers = fetchMock.mock.calls.map(([, init]) => init.headers as Record<string, string>);
+    expect(headers[0]).toMatchObject({ apikey: 'sb_secret_x' });
+    expect(headers[0]).not.toHaveProperty('authorization');
+    expect(headers[1]).toMatchObject({ apikey: 'eyJx', authorization: 'Bearer eyJx' });
+    vi.unstubAllGlobals();
+  });
+
+  it('turns an error status into a thrown error', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('paused', { status: 503 })));
+    await expect(supabaseStore(env)!.get(['a'])).rejects.toThrow('503');
     vi.unstubAllGlobals();
   });
 });
@@ -164,7 +188,7 @@ describe('when the store is unavailable', () => {
   });
 });
 
-describe('when Redis is not configured', () => {
+describe('when Supabase is not configured', () => {
   it('answers 200 with views: null', async () => {
     configured = false;
     const res = await call('?slug=first-post');
