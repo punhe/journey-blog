@@ -1,7 +1,7 @@
 # Journal Blog
 
 A dark, illustration-led personal journal. Astro builds the site as static
-files, Sanity holds the content, and a Netlify Function counts views.
+files, Sanity holds the content, and a Vercel Function counts views.
 
 Design spec: [`docs/superpowers/specs/2026-09-21-journal-blog-design.md`](docs/superpowers/specs/2026-09-21-journal-blog-design.md).
 
@@ -9,8 +9,8 @@ Design spec: [`docs/superpowers/specs/2026-09-21-journal-blog-design.md`](docs/s
 |---|---|
 | Site | Astro 7, static output, TypeScript |
 | Content | Sanity, Studio embedded at `/studio` |
-| Hosting | Netlify (one site: pages, Studio and functions) |
-| View counts | Netlify Function + Netlify Blobs |
+| Hosting | Vercel (one project: pages, Studio and functions) |
+| View counts | Vercel Function + Upstash Redis |
 | AI posting | `@sanity/mcp-server` in Claude Code or Claude Desktop |
 
 ## First run
@@ -28,7 +28,7 @@ Design spec: [`docs/superpowers/specs/2026-09-21-journal-blog-design.md`](docs/s
 
    Create the token at sanity.io/manage → API → Tokens, role **Editor**.
 3. **Allow the site to reach the Studio.** In sanity.io/manage → API → CORS
-   origins, add `http://localhost:4321` and your Netlify URL, with credentials.
+   origins, add `http://localhost:4321` and your Vercel URL, with credentials.
 4. **Install and seed.**
 
    ```bash
@@ -45,57 +45,58 @@ Design spec: [`docs/superpowers/specs/2026-09-21-journal-blog-design.md`](docs/s
 | Command | What it does |
 |---|---|
 | `npm run dev` | Astro dev server, Studio at `/studio`. No view counts. |
-| `npx netlify dev` | The same plus the functions and the local Blobs store. |
+| `npx vercel dev` | The same plus the `/api` functions. Needs the Redis variables. |
 | `npm run build` | `astro check`, then a static build into `dist/`. |
 | `npm run preview` | Serves the last build. |
 | `npm test` | Vitest: the views function and the query helpers. |
 | `npm run seed` | Placeholder content. See above. |
-| `npm run deploy` | Build, then push the result to Netlify. |
+| `npm run deploy` | Build on Vercel from the local files and publish to production. |
 
 ## Publishing a post
 
-Publish in the Studio. Nothing else. A Sanity webhook calls a Netlify build
-hook, Netlify builds this repository, and the new pages are live in about a
+Publish in the Studio. Nothing else. A Sanity webhook calls a Vercel deploy
+hook, Vercel builds this repository, and the new pages are live in about a
 minute.
 
-`npm run deploy` still exists as a fallback: it builds locally and pushes the
-result straight to Netlify, which is useful when the automatic chain is broken
-or you want to see a change without committing it.
+`npm run deploy` still exists as a fallback: it uploads the local files and
+builds them on Vercel, which is useful when the automatic chain is broken or
+you want to see a change without committing it.
 
 ### How the chain is wired
 
-1. **Sanity webhook** `Netlify rebuild` posts to a Netlify build hook on every
-   transaction in the `production` dataset. It carries no filter: the dataset
-   holds only posts, tags and the settings singleton, so every change is a
-   change worth rebuilding for.
-2. **Netlify build hook** starts a build of the `main` branch.
-3. **Netlify reads this repository** through a read-only deploy key rather than
-   the GitHub App. The repository also carries a webhook that tells Netlify
-   about pushes, so a commit deploys as well.
-4. **Build settings** come from `netlify.toml`. The two `PUBLIC_SANITY_*`
-   variables are set in the Netlify site, because the build runs on their
-   machines and has no `.env`.
+1. **Sanity webhook** posts to a Vercel deploy hook on every transaction in
+   the `production` dataset.
+2. **Vercel deploy hook** starts a production build of the `main` branch.
+   Pushes to `main` deploy as well, through the Vercel GitHub integration.
+3. **Build settings** come from `vercel.json`. The `PUBLIC_SANITY_*` variables
+   are set in the Vercel project, because the build has no `.env`.
+4. **The build reads Sanity with `useCdn: false`.** The hook fires about a
+   second after a publish. The API CDN still served the old dataset then, and
+   builds shipped without the new post.
 
 Nothing in that chain needs `SANITY_API_TOKEN`: the dataset is public to read.
 
-## Deploying to Netlify
+## Deploying to Vercel
 
-1. Create a site from this repository. `netlify.toml` already sets the build
-   command (`npm run build`), the publish directory (`dist`) and the functions
-   directory (`netlify/functions`).
-2. Add `PUBLIC_SANITY_PROJECT_ID` and `PUBLIC_SANITY_DATASET` to the site's
-   environment variables. The build does not need `SANITY_API_TOKEN`.
-3. Netlify Blobs needs no setup. The store `post-views` is created on the
-   first write.
+1. Import this repository as a Vercel project. `vercel.json` sets the build
+   command (`npm run build`), the output directory (`dist`) and the rewrite
+   that lets the Studio own `/studio/*`. Files in `api/` become functions.
+2. Add `PUBLIC_SANITY_PROJECT_ID`, `PUBLIC_SANITY_DATASET` and
+   `PUBLIC_SITE_URL` to the project's environment variables. The build does
+   not need `SANITY_API_TOKEN`.
+3. Add Upstash Redis from Vercel → Storage (Marketplace) and connect it to the
+   project. It sets `KV_REST_API_URL` and `KV_REST_API_TOKEN`. Without them
+   the site works and the view counter stays hidden.
+4. Add the Vercel project URL to the Sanity CORS origins, with credentials.
 
 ### Rebuild when a post is published
 
 The site is static, so publishing in the Studio has to trigger a build.
 
-1. Netlify → Site configuration → Build & deploy → Build hooks → **Add build
-   hook**. Copy the URL.
+1. Vercel → Project → Settings → Git → Deploy Hooks → create a hook for the
+   `main` branch. Copy the URL.
 2. sanity.io/manage → API → Webhooks → **Create webhook**:
-   - URL: the build hook URL
+   - URL: the deploy hook URL
    - Dataset: `production`
    - Trigger on: Create, Update, Delete
    - Filter: `_type == "post" || _type == "tag" || _type == "siteSettings"`
@@ -134,7 +135,7 @@ and the site rebuilds.
 
 ## View counter
 
-`netlify/functions/views.ts`, reachable at `/api/views`:
+`api/views.ts`, reachable at `/api/views`:
 
 - `GET /api/views?slug=a` → `{ "views": { "a": 12 } }`, `0` when unseen
 - `GET /api/views?slugs=a,b,c` → one map, 100 slugs per request
@@ -143,15 +144,10 @@ and the site rebuilds.
 Home cards make one batched `GET` after load. An article makes one `POST`.
 Repeat visits by the same reader count; there is no dedupe.
 
-Two caveats, both deliberate:
-
-- The store is opened in strong consistency mode. Blobs reads are eventually
-  consistent by default, which made every increment read a stale number and
-  the count stuck at 1.
-- The increment reads and then writes. Netlify Blobs has no compare-and-set,
-  so two overlapping requests can lose one increment.
-- If the store cannot be reached, the function answers `200` with
-  `"views": null` and the page hides the counter rather than showing `0`.
+- Counts live in Upstash Redis under `post-views:<slug>`. The increment is
+  Redis `INCR`, so overlapping requests do not lose a count.
+- If Redis is not configured or cannot be reached, the function answers `200`
+  with `"views": null` and the page hides the counter rather than showing `0`.
 
 ## Layout
 
@@ -162,7 +158,7 @@ sanity/schemas/         post, tag, siteSettings
 src/pages/              index, posts/[slug], tags/[slug]
 src/components/         header, hero, cards, tag chips, Portable Text renderer
 src/lib/sanity.ts       client, GROQ queries, image URLs, date format
-netlify/functions/      views.ts
+api/views.ts            view counter (Vercel Function)
 scripts/seed.ts         placeholder content, with a small PNG generator
 tests/                  Vitest
 ```

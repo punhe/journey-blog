@@ -13,7 +13,7 @@ const { PUBLIC_SANITY_PROJECT_ID, PUBLIC_SANITY_DATASET, PUBLIC_SITE_URL } = loa
 if (!PUBLIC_SANITY_PROJECT_ID) {
   throw new Error(
     'PUBLIC_SANITY_PROJECT_ID is not set. Copy .env.example to .env and fill it in, ' +
-      'or set the variable in the Netlify site settings.',
+      'or set the variable in the Vercel project settings.',
   );
 }
 
@@ -27,7 +27,9 @@ export default defineConfig({
       projectId: PUBLIC_SANITY_PROJECT_ID,
       dataset: PUBLIC_SANITY_DATASET || 'production',
       apiVersion: '2026-01-01',
-      useCdn: true,
+      // Builds start a second after a publish. The API CDN still serves the old
+      // dataset then, and the build shipped without the new post.
+      useCdn: false,
       studioBasePath: '/studio',
     }),
     react(),

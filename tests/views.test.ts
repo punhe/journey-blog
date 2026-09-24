@@ -1,25 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createHandler, redisStore, type ViewStore } from '../api/views';
 
 const store = new Map<string, string>();
 let storeFails = false;
+let configured = true;
 
-const getMock = vi.fn(async (key: string) => {
-  if (storeFails) throw new Error('blobs down');
-  return store.get(key) ?? null;
+const getMock = vi.fn(async (slugs: string[]) => {
+  if (storeFails) throw new Error('redis down');
+  return slugs.map((slug) => store.get(slug) ?? null);
 });
 
-const setMock = vi.fn(async (key: string, value: string) => {
-  if (storeFails) throw new Error('blobs down');
-  store.set(key, value);
+const incrementMock = vi.fn(async (slug: string) => {
+  if (storeFails) throw new Error('redis down');
+  const next = (Number.parseInt(store.get(slug) ?? '0', 10) || 0) + 1;
+  store.set(slug, String(next));
+  return next;
 });
 
-const getStoreMock = vi.fn(() => ({ get: getMock, set: setMock }));
-
-vi.mock('@netlify/blobs', () => ({
-  getStore: (...args: unknown[]) => getStoreMock(...(args as [])),
-}));
-
-const { default: handler } = await import('../netlify/functions/views');
+const memoryStore: ViewStore = { get: getMock, increment: incrementMock };
+const handler = createHandler(() => (configured ? memoryStore : null));
 
 function call(query: string, method: 'GET' | 'POST' = 'GET') {
   return handler(new Request(`https://example.test/api/views${query}`, { method }));
@@ -28,21 +27,40 @@ function call(query: string, method: 'GET' | 'POST' = 'GET') {
 beforeEach(() => {
   store.clear();
   storeFails = false;
+  configured = true;
   getMock.mockClear();
-  setMock.mockClear();
-  getStoreMock.mockClear();
+  incrementMock.mockClear();
 });
 
-describe('the store', () => {
-  it('is opened in strong consistency mode', async () => {
-    // Eventually consistent reads made every increment read a stale number,
-    // so the count stuck at 1 on the live deploy.
-    await call('?slug=first-post');
+describe('the Redis store', () => {
+  it('is null without a connection', () => {
+    expect(redisStore({})).toBeNull();
+  });
 
-    expect(getStoreMock).toHaveBeenCalledWith({
-      name: 'post-views',
-      consistency: 'strong',
+  it('reads the Marketplace variable names and the Upstash ones', () => {
+    expect(redisStore({ KV_REST_API_URL: 'https://r.test', KV_REST_API_TOKEN: 't' })).not.toBeNull();
+    expect(
+      redisStore({ UPSTASH_REDIS_REST_URL: 'https://r.test', UPSTASH_REDIS_REST_TOKEN: 't' }),
+    ).not.toBeNull();
+  });
+
+  it('sends MGET and INCR through the pipeline endpoint', async () => {
+    const fetchMock = vi.fn(async (_url: string, init: RequestInit) => {
+      const [command] = JSON.parse(String(init.body)) as string[][];
+      const result = command![0] === 'MGET' ? ['4', null] : 5;
+      return new Response(JSON.stringify([{ result }]));
     });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const redis = redisStore({ KV_REST_API_URL: 'https://r.test/', KV_REST_API_TOKEN: 't' })!;
+    await expect(redis.get(['a', 'b'])).resolves.toEqual(['4', null]);
+    await expect(redis.increment('a')).resolves.toBe(5);
+
+    expect(fetchMock.mock.calls[0]![0]).toBe('https://r.test/pipeline');
+    expect(JSON.parse(String(fetchMock.mock.calls[1]![1].body))).toEqual([
+      ['INCR', 'post-views:a'],
+    ]);
+    vi.unstubAllGlobals();
   });
 });
 
@@ -124,7 +142,7 @@ describe('POST', () => {
 
   it('rejects an invalid slug before writing', async () => {
     expect((await call('?slug=Bad Slug', 'POST')).status).toBe(400);
-    expect(setMock).not.toHaveBeenCalled();
+    expect(incrementMock).not.toHaveBeenCalled();
   });
 });
 
@@ -140,6 +158,16 @@ describe('when the store is unavailable', () => {
   it('answers 200 with views: null on increment', async () => {
     storeFails = true;
     const res = await call('?slug=first-post', 'POST');
+
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toEqual({ views: null });
+  });
+});
+
+describe('when Redis is not configured', () => {
+  it('answers 200 with views: null', async () => {
+    configured = false;
+    const res = await call('?slug=first-post');
 
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({ views: null });
